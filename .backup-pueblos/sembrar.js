@@ -49,24 +49,20 @@ const anuncios = [
   },
 ]
 
-const contar = async (supabase, tabla, pueblo) => {
-  const query = supabase.from(tabla).select('id', { count: 'exact', head: true })
-  if (pueblo) query.eq('pueblo', pueblo)
-  const { count, error } = await query
+const contar = async (supabase, tabla) => {
+  const { count, error } = await supabase.from(tabla).select('id', { count: 'exact', head: true })
   if (error) throw error
   return count || 0
 }
 
-const sembrarCategorias = async (supabase, pueblo) => {
-  if ((await contar(supabase, 'categorias', pueblo)) > 0) {
-    console.log(`[seed] Categorías de ${pueblo} ya existentes, se omiten.`)
+const sembrarCategorias = async (supabase) => {
+  if ((await contar(supabase, 'categorias')) > 0) {
+    console.log('[seed] Categorías ya existentes, se omiten.')
     return
   }
-  const { error } = await supabase.from('categorias').insert(
-    categorias.map((c) => ({ ...c, pueblo }))
-  )
+  const { error } = await supabase.from('categorias').insert(categorias)
   if (error) throw error
-  console.log(`[seed] Categorías creadas (${pueblo}):`, categorias.length)
+  console.log('[seed] Categorías creadas:', categorias.length)
 }
 
 const sembrarAdmin = async (supabase) => {
@@ -120,40 +116,34 @@ const sembrarAdmin = async (supabase) => {
   console.log(`[seed] Usuario admin creado: ${ADMIN_USER} / ${ADMIN_EMAIL}`)
 }
 
-const sembrarNoticias = async (supabase, pueblo) => {
-  if ((await contar(supabase, 'noticias', pueblo)) > 0) {
-    console.log(`[seed] Noticias de ${pueblo} ya existentes, se omiten.`)
+const sembrarNoticias = async (supabase) => {
+  if ((await contar(supabase, 'noticias')) > 0) {
+    console.log('[seed] Noticias ya existentes, se omiten.')
     return
   }
   const { error } = await supabase.from('noticias').insert(
-    noticias.map((n, i) => ({ ...n, pueblo, imagen: `/images/noticia-${i + 1}.jpg` }))
+    noticias.map((n, i) => ({ ...n, imagen: `/images/noticia-${i + 1}.jpg` }))
   )
   if (error) throw error
-  console.log(`[seed] Noticias creadas (${pueblo}):`, noticias.length)
+  console.log('[seed] Noticias creadas:', noticias.length)
 }
 
-const sembrarAnuncios = async (supabase, pueblo) => {
-  if ((await contar(supabase, 'anuncios', pueblo)) > 0) {
-    console.log(`[seed] Anuncios de ${pueblo} ya existentes, se omiten.`)
+const sembrarAnuncios = async (supabase) => {
+  if ((await contar(supabase, 'anuncios')) > 0) {
+    console.log('[seed] Anuncios ya existentes, se omiten.')
     return
   }
-  const { error } = await supabase.from('anuncios').insert(
-    anuncios.map((a) => ({ ...a, pueblo }))
-  )
+  const { error } = await supabase.from('anuncios').insert(anuncios)
   if (error) throw error
-  console.log(`[seed] Anuncios creados (${pueblo}):`, anuncios.length)
+  console.log('[seed] Anuncios creados:', anuncios.length)
 }
-
-const PUEBLOS_SEED = ['lascabezas', 'lebrija', 'elcuervo']
 
 const sembrar = async () => {
   const supabase = getSupabase()
+  await sembrarCategorias(supabase)
   await sembrarAdmin(supabase)
-  for (const pueblo of PUEBLOS_SEED) {
-    await sembrarCategorias(supabase, pueblo)
-    await sembrarNoticias(supabase, pueblo)
-    await sembrarAnuncios(supabase, pueblo)
-  }
+  await sembrarNoticias(supabase)
+  await sembrarAnuncios(supabase)
 }
 
 module.exports = { sembrar }

@@ -1,5 +1,4 @@
 const { config } = require('./config/env')
-const { detectarPueblo, obtenerConfig, obtenerTodos } = require('./config/pueblos')
 
 const express = require('express')
 const cors = require('cors')
@@ -22,17 +21,7 @@ for (const origen of config.CORS_ORIGINS) {
   origenesPermitidos.add(origen)
 }
 
-// Permite todos los subdominios del portal
-const permitirCualquierOrigen = (origen, callback) => {
-  if (!origen) return callback(null, true)
-  if (origen.endsWith('.actualidadlocal.es') || origen === 'https://actualidadlocal.es') {
-    return callback(null, true)
-  }
-  if (origenesPermitidos.has(origen)) return callback(null, true)
-  return callback(null, false)
-}
-
-app.use(cors({ origin: permitirCualquierOrigen, credentials: true }))
+app.use(cors({ origin: [...origenesPermitidos], credentials: true }))
 
 if (config.TRUST_PROXY) {
   app.set('trust proxy', config.TRUST_PROXY)
@@ -48,20 +37,14 @@ app.use(express.urlencoded({ extended: true }))
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'API de Actualidad Local funcionando',
+    message: 'API de Actualidad Las Cabezas funcionando',
     endpoints: {
-      config: '/api/config',
       noticias: '/api/noticias',
       categorias: '/api/categorias',
       auth: '/api/auth/login',
       anuncios: '/api/anuncios',
     },
   })
-})
-
-app.get('/api/config', (req, res) => {
-  const slug = detectarPueblo(req)
-  res.json({ success: true, data: obtenerConfig(slug), pueblos: obtenerTodos() })
 })
 
 app.use('/api/auth', auth)

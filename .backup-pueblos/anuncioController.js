@@ -1,5 +1,4 @@
 const { getSupabase } = require('../config/supabase')
-const { detectarPueblo } = require('../config/pueblos')
 
 const serializarAnuncio = (a) => ({
   id: a.id,
@@ -12,20 +11,17 @@ const serializarAnuncio = (a) => ({
   fechaFin: a.fecha_fin || null,
   stripeCustomerId: a.stripe_customer_id || '',
   stripeSubscriptionId: a.stripe_subscription_id || '',
-  pueblo: a.pueblo,
 })
 
 const AHORA = () => new Date().toISOString()
 
-const listarActivos = async (req, res) => {
-  const pueblo = detectarPueblo(req)
+const listarActivos = async (_req, res) => {
   const supabase = getSupabase()
   const ahora = AHORA()
   const { data, error } = await supabase
     .from('anuncios')
     .select('*')
     .eq('activo', true)
-    .eq('pueblo', pueblo)
     .or(`fecha_inicio.is.null,fecha_inicio.lte.${ahora}`)
     .or(`fecha_fin.is.null,fecha_fin.gte.${ahora}`)
     .order('created_at', { ascending: false })
@@ -34,13 +30,11 @@ const listarActivos = async (req, res) => {
   res.json({ success: true, data: (data || []).map(serializarAnuncio) })
 }
 
-const listar = async (req, res) => {
-  const pueblo = detectarPueblo(req)
+const listar = async (_req, res) => {
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('anuncios')
     .select('*')
-    .eq('pueblo', pueblo)
     .order('created_at', { ascending: false })
   if (error) throw error
 
@@ -49,12 +43,11 @@ const listar = async (req, res) => {
 
 const crear = async (req, res) => {
   const { empresa, tipo = 'imagen', contenido, enlace = '', activo = false, fecha_inicio = null, fecha_fin = null } = req.body
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('anuncios')
-    .insert({ empresa, tipo, contenido, enlace, activo, fecha_inicio, fecha_fin, pueblo })
+    .insert({ empresa, tipo, contenido, enlace, activo, fecha_inicio, fecha_fin })
     .select()
     .single()
   if (error) throw error
@@ -65,7 +58,6 @@ const crear = async (req, res) => {
 const actualizar = async (req, res) => {
   const { id } = req.params
   const { empresa, tipo, contenido, enlace, activo, fecha_inicio, fecha_fin } = req.body
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const campos = {}
@@ -81,7 +73,6 @@ const actualizar = async (req, res) => {
     .from('anuncios')
     .update(campos)
     .eq('id', id)
-    .eq('pueblo', pueblo)
     .select()
     .maybeSingle()
   if (error) throw error
@@ -94,14 +85,12 @@ const actualizar = async (req, res) => {
 
 const eliminar = async (req, res) => {
   const { id } = req.params
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('anuncios')
     .delete()
     .eq('id', id)
-    .eq('pueblo', pueblo)
     .select()
     .maybeSingle()
   if (error) throw error

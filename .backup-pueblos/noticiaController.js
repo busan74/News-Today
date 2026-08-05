@@ -1,6 +1,5 @@
 const { getSupabase } = require('../config/supabase')
 const { esIdInvalido } = require('../middleware/errores')
-const { detectarPueblo } = require('../config/pueblos')
 
 const serializarNoticia = (n) => ({
   id: n.id,
@@ -9,15 +8,13 @@ const serializarNoticia = (n) => ({
   texto: n.texto,
   imagen: n.imagen,
   fecha: n.fecha,
-  pueblo: n.pueblo,
 })
 
 const listar = async (req, res) => {
   const { categoria, q } = req.query
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
-  let query = supabase.from('noticias').select('*').eq('pueblo', pueblo).order('fecha', { ascending: false })
+  let query = supabase.from('noticias').select('*').order('fecha', { ascending: false })
   if (categoria) query = query.eq('categoria', categoria)
   if (q) query = query.or(`titulo.ilike.%${q}%,texto.ilike.%${q}%`)
 
@@ -28,13 +25,11 @@ const listar = async (req, res) => {
 }
 
 const obtener = async (req, res) => {
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('noticias')
     .select('*')
     .eq('id', req.params.id)
-    .eq('pueblo', pueblo)
     .maybeSingle()
 
   if (error) {
@@ -52,7 +47,6 @@ const obtener = async (req, res) => {
 
 const crear = async (req, res) => {
   const { categoria, titulo, texto, imagen, fecha } = req.body
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
@@ -63,7 +57,6 @@ const crear = async (req, res) => {
       texto,
       imagen: imagen || '',
       fecha: fecha || new Date().toISOString(),
-      pueblo,
     })
     .select()
     .single()
@@ -74,7 +67,6 @@ const crear = async (req, res) => {
 
 const actualizar = async (req, res) => {
   const { categoria, titulo, texto, imagen, fecha } = req.body
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const cambios = {}
@@ -88,7 +80,6 @@ const actualizar = async (req, res) => {
     .from('noticias')
     .update(cambios)
     .eq('id', req.params.id)
-    .eq('pueblo', pueblo)
     .select()
     .maybeSingle()
 
@@ -106,14 +97,12 @@ const actualizar = async (req, res) => {
 }
 
 const eliminar = async (req, res) => {
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('noticias')
     .delete()
     .eq('id', req.params.id)
-    .eq('pueblo', pueblo)
     .select()
     .maybeSingle()
 

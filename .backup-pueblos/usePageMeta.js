@@ -1,13 +1,11 @@
 import { useEffect } from 'react'
-import { usePueblo } from './usePueblo'
+
+const SITE_NAME = 'Actualidad Las Cabezas'
 
 export const usePageMeta = ({ title, description } = {}) => {
-    const { config } = usePueblo()
-    const nombre = config.nombre
-
     useEffect(() => {
-        document.title = title ? `${title} · ${nombre}` : nombre
-    }, [title, nombre])
+        document.title = title ? `${title} · ${SITE_NAME}` : SITE_NAME
+    }, [title])
 
     useEffect(() => {
         if (!description) return

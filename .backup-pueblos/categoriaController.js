@@ -1,17 +1,11 @@
 const { getSupabase } = require('../config/supabase')
 const { esIdInvalido } = require('../middleware/errores')
-const { detectarPueblo } = require('../config/pueblos')
 
-const serializarCategoria = (c) => ({ id: c.id, slug: c.slug, nombre: c.nombre, pueblo: c.pueblo })
+const serializarCategoria = (c) => ({ id: c.id, slug: c.slug, nombre: c.nombre })
 
 const listar = async (req, res) => {
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
-  const { data, error } = await supabase
-    .from('categorias')
-    .select('*')
-    .eq('pueblo', pueblo)
-    .order('nombre', { ascending: true })
+  const { data, error } = await supabase.from('categorias').select('*').order('nombre', { ascending: true })
   if (error) throw error
 
   res.json({ success: true, data: (data || []).map(serializarCategoria) })
@@ -19,12 +13,11 @@ const listar = async (req, res) => {
 
 const crear = async (req, res) => {
   const { slug, nombre } = req.body
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('categorias')
-    .insert({ slug, nombre, pueblo })
+    .insert({ slug, nombre })
     .select()
     .single()
   if (error) throw error
@@ -34,7 +27,6 @@ const crear = async (req, res) => {
 
 const actualizar = async (req, res) => {
   const { slug, nombre } = req.body
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const cambios = {}
@@ -45,7 +37,6 @@ const actualizar = async (req, res) => {
     .from('categorias')
     .update(cambios)
     .eq('id', req.params.id)
-    .eq('pueblo', pueblo)
     .select()
     .maybeSingle()
 
@@ -63,14 +54,12 @@ const actualizar = async (req, res) => {
 }
 
 const eliminar = async (req, res) => {
-  const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('categorias')
     .delete()
     .eq('id', req.params.id)
-    .eq('pueblo', pueblo)
     .select()
     .maybeSingle()
 

@@ -4,15 +4,12 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthProvider.jsx'
-import { PuebloProvider } from './context/PuebloProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <PuebloProvider>
-          <App />
-        </PuebloProvider>
+        <App />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

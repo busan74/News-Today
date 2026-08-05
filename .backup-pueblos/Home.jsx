@@ -8,13 +8,11 @@ import Tiempo from '../Components/Tiempo'
 import Empleo from '../Components/Empleo'
 import Anuncio from '../Components/Anuncio'
 import { usePageMeta } from '../hooks/usePageMeta'
-import { usePueblo } from '../hooks/usePueblo'
 
 const Home = () => {
-    const { config } = usePueblo()
     usePageMeta({
         title: 'Inicio',
-        description: `Toda la actualidad del día en ${config.nombre}.`,
+        description: 'Toda la actualidad del día en Actualidad Las Cabezas.',
     })
 
     return (

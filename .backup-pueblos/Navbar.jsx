@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { usePueblo } from '../hooks/usePueblo'
 
 const Navbar = () => {
     const [termino, setTermino] = useState('')
     const { isAuth, logout } = useAuth()
-    const { config } = usePueblo()
     const navigate = useNavigate()
 
     const links = [
@@ -30,8 +28,8 @@ const Navbar = () => {
     return (
         <header className="navbar">
             <NavLink to="/" className="navbar-brand">
-                <span className="navbar-logo">{config.logo}</span>
-                {config.nombre}
+                <span className="navbar-logo">LC</span>
+                Actualidad Las Cabezas
             </NavLink>
             <nav className="navbar-links">
                 {links.map((link) => (
