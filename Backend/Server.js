@@ -4,19 +4,8 @@ const https = require('https')
 
 const app = require('./app')
 const { config } = require('./config/env')
-const { conectarBD, cerrarBD } = require('./config/db')
-const { sembrar } = require('./config/sembrar')
 
-const arrancar = async () => {
-  const { persistente } = await conectarBD()
-  if (persistente) {
-    console.log('[db] Conectado a MongoDB (MONGO_URI).')
-  } else {
-    console.warn('[db] MONGO_URI no configurado. Usando MongoDB en memoria (los datos no persisten).')
-    console.log('[db] Sembrando categorías, admin y noticias de ejemplo...')
-    await sembrar()
-  }
-
+const arrancar = () => {
   let servidor
   let protocolo = 'http'
   if (config.SSL_CERT_PATH && config.SSL_KEY_PATH) {
@@ -37,15 +26,9 @@ const arrancar = async () => {
     servidor = http.createServer(app)
   }
 
-  const cerrar = async (senal) => {
+  const cerrar = (senal) => {
     console.log(`[shutdown] Recibida ${senal}, cerrando conexiones...`)
-    servidor.close(async () => {
-      try {
-        await cerrarBD()
-      } finally {
-        process.exit(0)
-      }
-    })
+    servidor.close(() => process.exit(0))
   }
 
   process.on('SIGINT', () => cerrar('SIGINT'))
@@ -56,7 +39,4 @@ const arrancar = async () => {
   })
 }
 
-arrancar().catch((err) => {
-  console.error('[startup] Error al arrancar:', err)
-  process.exit(1)
-})
+arrancar()

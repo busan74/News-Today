@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./Backend
+    container_name: news-today-backend
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      NODE_ENV: production
+      CLIENT_URL: http://localhost:5173
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./Frontend
+    container_name: news-today-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy

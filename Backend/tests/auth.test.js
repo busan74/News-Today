@@ -1,6 +1,6 @@
 import request from 'supertest'
 import app from '../app'
-import Usuario from '../models/Usuario'
+import { obtenerAuthUsers } from './fakeSupabase'
 
 describe('Auth', () => {
   describe('POST /api/auth/register', () => {
@@ -18,7 +18,7 @@ describe('Auth', () => {
       expect(res.body.user.role).toBe('admin')
       expect(res.body.user.password).toBeUndefined()
 
-      const enBD = await Usuario.findOne({ username: 'admin' }).select('+password')
+      const enBD = obtenerAuthUsers().find((u) => u.email === 'admin@news-today.local')
       expect(enBD.password).not.toBe('password123')
     })
 

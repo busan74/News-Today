@@ -1,33 +1,97 @@
-const Usuario = require('../models/Usuario')
-const { firmarToken } = require('../middleware/auth')
+const { getSupabase } = require('../config/supabase')
+
+const buscarPerfil = async (supabase, campo, valor) => {
+  const { data, error } = await supabase.from('profiles').select('*').eq(campo, valor).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+const contarPerfiles = async (supabase) => {
+  const { count, error } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
+  if (error) throw error
+  return count || 0
+}
 
 const registrar = async (req, res) => {
   const { username, email, password } = req.body
-  const existentes = await Usuario.countDocuments()
-  const usuario = new Usuario({
-    username,
-    email,
+  const nombre = String(username || '').trim().toLowerCase()
+  const correo = String(email || '').trim().toLowerCase()
+
+  const supabase = getSupabase()
+
+  if (await buscarPerfil(supabase, 'username', nombre)) {
+    return res.status(409).json({ success: false, error: 'El registro ya existe' })
+  }
+  if (await buscarPerfil(supabase, 'email', correo)) {
+    return res.status(409).json({ success: false, error: 'El registro ya existe' })
+  }
+
+  const total = await contarPerfiles(supabase)
+  const role = total === 0 ? 'admin' : 'editor'
+
+  const { data: creado, error: errorAuth } = await supabase.auth.admin.createUser({
+    email: correo,
     password,
-    role: existentes === 0 ? 'admin' : 'editor',
+    email_confirm: true,
+    user_metadata: { username: nombre, role },
   })
-  await usuario.save()
-  const token = firmarToken(usuario)
-  res.status(201).json({ success: true, token, user: usuario })
+  if (errorAuth) {
+    return res.status(409).json({ success: false, error: 'El registro ya existe' })
+  }
+
+  const { data: perfil, error: errorPerfil } = await supabase
+    .from('profiles')
+    .insert({ id: creado.user.id, username: nombre, email: correo, role })
+    .select()
+    .single()
+  if (errorPerfil) {
+    await supabase.auth.admin.deleteUser(creado.user.id).catch(() => {})
+    throw errorPerfil
+  }
+
+  const { data: sesion, error: errorSesion } = await supabase.auth.signInWithPassword({
+    email: correo,
+    password,
+  })
+  if (errorSesion) throw errorSesion
+
+  res.status(201).json({
+    success: true,
+    token: sesion.session.access_token,
+    user: { id: perfil.id, username: perfil.username, email: correo, role: perfil.role },
+  })
 }
 
 const iniciarSesion = async (req, res) => {
   const { username, password } = req.body
   const id = String(username || '').trim().toLowerCase()
-  const usuario = await Usuario.findOne({ $or: [{ username: id }, { email: id }] }).select('+password')
-  if (!usuario || !(await usuario.compararPassword(password))) {
+
+  const supabase = getSupabase()
+
+  let perfil = await buscarPerfil(supabase, 'username', id)
+  if (!perfil) perfil = await buscarPerfil(supabase, 'email', id)
+  if (!perfil) {
     return res.status(401).json({ success: false, error: 'Credenciales incorrectas' })
   }
-  const token = firmarToken(usuario)
-  res.json({ success: true, token, user: usuario })
+
+  const { data: sesion, error } = await supabase.auth.signInWithPassword({
+    email: perfil.email,
+    password,
+  })
+  if (error || !sesion.session) {
+    return res.status(401).json({ success: false, error: 'Credenciales incorrectas' })
+  }
+
+  res.json({
+    success: true,
+    token: sesion.session.access_token,
+    user: { id: perfil.id, username: perfil.username, email: perfil.email, role: perfil.role },
+  })
 }
 
 const perfil = async (req, res) => {
-  const usuario = await Usuario.findById(req.user.id)
+  const supabase = getSupabase()
+  const usuario = await buscarPerfil(supabase, 'id', req.user.id)
   if (!usuario) {
     return res.status(404).json({ success: false, error: 'Usuario no encontrado' })
   }

@@ -1,6 +1,4 @@
-const Categoria = require('../models/Categoria')
-const Usuario = require('../models/Usuario')
-const Noticia = require('../models/Noticia')
+const { getSupabase } = require('./supabase')
 const { config } = require('./env')
 
 const categorias = [
@@ -34,30 +32,38 @@ const noticias = [
   { categoria: 'empleo', titulo: 'Ferias de empleo en toda la región', texto: 'Revisa el calendario de eventos para conectar con reclutadores.', fecha: '2026-08-01T09:45:00.000Z' },
 ]
 
-const sembrarCategorias = async () => {
-  if ((await Categoria.countDocuments()) > 0) {
+const contar = async (supabase, tabla) => {
+  const { count, error } = await supabase.from(tabla).select('id', { count: 'exact', head: true })
+  if (error) throw error
+  return count || 0
+}
+
+const sembrarCategorias = async (supabase) => {
+  if ((await contar(supabase, 'categorias')) > 0) {
     console.log('[seed] Categorías ya existentes, se omiten.')
     return
   }
-  await Categoria.insertMany(categorias)
+  const { error } = await supabase.from('categorias').insert(categorias)
+  if (error) throw error
   console.log('[seed] Categorías creadas:', categorias.length)
 }
 
-const sembrarAdmin = async () => {
+const sembrarAdmin = async (supabase) => {
   const { ADMIN_USER, ADMIN_EMAIL, ADMIN_PASS } = config
-  const usuario = await Usuario.findOne({ $or: [{ username: ADMIN_USER }, { email: ADMIN_EMAIL }] }).select('+password')
 
-  if (usuario) {
-    const cambios = {}
-    if (usuario.role !== 'admin') cambios.role = 'admin'
-    if (usuario.username !== ADMIN_USER) cambios.username = ADMIN_USER
-    if (usuario.email !== ADMIN_EMAIL) cambios.email = ADMIN_EMAIL
-    const pwdOk = await usuario.compararPassword(ADMIN_PASS)
-    if (!pwdOk) cambios.password = ADMIN_PASS
+  const { data: existente } = await supabase
+    .from('profiles')
+    .select('*')
+    .or(`username.eq.${ADMIN_USER},email.eq.${ADMIN_EMAIL}`)
+    .maybeSingle()
 
-    if (Object.keys(cambios).length) {
-      Object.assign(usuario, cambios)
-      await usuario.save()
+  if (existente) {
+    if (existente.role !== 'admin') {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', existente.id)
+      if (error) throw error
       console.log('[seed] Usuario admin actualizado:', ADMIN_EMAIL)
     } else {
       console.log('[seed] Usuario admin ya existe:', ADMIN_EMAIL)
@@ -65,25 +71,51 @@ const sembrarAdmin = async () => {
     return
   }
 
-  await Usuario.create({ username: ADMIN_USER, email: ADMIN_EMAIL, password: ADMIN_PASS, role: 'admin' })
+  const { data: creado, error: errorAuth } = await supabase.auth.admin.createUser({
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASS,
+    email_confirm: true,
+    user_metadata: { username: ADMIN_USER, role: 'admin' },
+  })
+
+  if (errorAuth) {
+    const { data: usuarios } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    const encontrado = usuarios?.users?.find((u) => u.email === ADMIN_EMAIL)
+    if (encontrado) {
+      const { error } = await supabase
+        .from('profiles')
+        .insert({ id: encontrado.id, username: ADMIN_USER, email: ADMIN_EMAIL, role: 'admin' })
+      if (error && error.code !== '23505') throw error
+      console.log('[seed] Usuario admin enlazado a perfil:', ADMIN_EMAIL)
+      return
+    }
+    throw errorAuth
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .insert({ id: creado.user.id, username: ADMIN_USER, email: ADMIN_EMAIL, role: 'admin' })
+  if (error) throw error
   console.log(`[seed] Usuario admin creado: ${ADMIN_USER} / ${ADMIN_EMAIL}`)
 }
 
-const sembrarNoticias = async () => {
-  if ((await Noticia.countDocuments()) > 0) {
+const sembrarNoticias = async (supabase) => {
+  if ((await contar(supabase, 'noticias')) > 0) {
     console.log('[seed] Noticias ya existentes, se omiten.')
     return
   }
-  await Noticia.insertMany(
+  const { error } = await supabase.from('noticias').insert(
     noticias.map((n, i) => ({ ...n, imagen: `/images/noticia-${i + 1}.jpg` }))
   )
+  if (error) throw error
   console.log('[seed] Noticias creadas:', noticias.length)
 }
 
 const sembrar = async () => {
-  await sembrarCategorias()
-  await sembrarAdmin()
-  await sembrarNoticias()
+  const supabase = getSupabase()
+  await sembrarCategorias(supabase)
+  await sembrarAdmin(supabase)
+  await sembrarNoticias(supabase)
 }
 
 module.exports = { sembrar }

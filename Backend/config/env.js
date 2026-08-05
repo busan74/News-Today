@@ -19,22 +19,20 @@ const parseTrustProxy = (valor) => {
   return valor
 }
 
+const SUPABASE_URL = process.env.SUPABASE_URL || ''
+const SUPABASE_JWKS_URL =
+  process.env.SUPABASE_JWKS_URL || (SUPABASE_URL ? `${SUPABASE_URL}/auth/v1/.well-known/jwks.json` : '')
+
 if (esProduccion) {
   const obligatorias = [
-    ['JWT_SECRET', 'secreto para firmar los tokens'],
-    ['MONGO_URI', 'URI de conexión a MongoDB'],
+    ['SUPABASE_URL', 'URL del proyecto Supabase'],
+    ['SUPABASE_SECRET_KEY', 'clave secreta (server) del proyecto Supabase'],
   ]
   for (const [clave, descripcion] of obligatorias) {
     if (!process.env[clave]) {
       throw new Error(`[env] En producción es obligatorio configurar ${clave} (${descripcion}).`)
     }
   }
-} else {
-  process.env.JWT_SECRET = process.env.JWT_SECRET || 'secret-desarrollo-cambiar-en-produccion'
-}
-
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'secret-desarrollo-cambiar-en-produccion') {
-  console.warn('[env] JWT_SECRET no configurado. Define uno propio en Backend/.env (no sirvas producción con este).')
 }
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173'
@@ -52,9 +50,10 @@ const config = {
   PORT: Number(process.env.PORT || 8080),
   CLIENT_URL,
   CORS_ORIGINS,
-  MONGO_URI: process.env.MONGO_URI || null,
-  JWT_SECRET: process.env.JWT_SECRET,
-  JWT_EXPIRES: process.env.JWT_EXPIRES || '7d',
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || '',
+  SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY || '',
+  SUPABASE_JWKS_URL,
   ADMIN_USER,
   ADMIN_EMAIL,
   ADMIN_PASS: process.env.ADMIN_PASS || 'password',

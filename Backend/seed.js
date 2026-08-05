@@ -1,13 +1,10 @@
 require('./config/env')
 
-const { conectarBD, cerrarBD } = require('./config/db')
 const { sembrar } = require('./config/sembrar')
 
 const seed = async () => {
-  const { persistente } = await conectarBD()
-  console.log(`[seed] BD ${persistente ? 'persistente' : 'en memoria'} conectada`)
+  console.log('[seed] Conectando a Supabase...')
   await sembrar()
-  await cerrarBD()
   console.log('[seed] Listo.')
 }
 
