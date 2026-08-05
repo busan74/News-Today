@@ -5,8 +5,7 @@ const cors = require('cors')
 const auth = require('./routes/auth')
 const noticias = require('./routes/noticias')
 const categorias = require('./routes/categorias')
-const suscripciones = require('./routes/suscripciones')
-const { webhook } = require('./controllers/webhookController')
+const anuncios = require('./routes/anuncios')
 const { errorHandler, notFound } = require('./middleware/errores')
 
 const app = express()
@@ -28,7 +27,9 @@ if (config.TRUST_PROXY) {
   app.set('trust proxy', config.TRUST_PROXY)
 }
 
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), webhook)
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), (_req, res) => {
+  res.status(501).json({ success: false, error: 'Pago de anuncios no implementado (Fase 2)' })
+})
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -36,12 +37,12 @@ app.use(express.urlencoded({ extended: true }))
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'API de News Today funcionando',
+    message: 'API de Actualidad Las Cabezas funcionando',
     endpoints: {
       noticias: '/api/noticias',
       categorias: '/api/categorias',
       auth: '/api/auth/login',
-      suscripcion: '/api/suscripcion',
+      anuncios: '/api/anuncios',
     },
   })
 })
@@ -49,7 +50,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', auth)
 app.use('/api/noticias', noticias)
 app.use('/api/categorias', categorias)
-app.use('/api/suscripcion', suscripciones)
+app.use('/api/anuncios', anuncios)
 
 app.use(notFound)
 app.use(errorHandler)

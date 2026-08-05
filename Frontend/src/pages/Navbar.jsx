@@ -28,8 +28,8 @@ const Navbar = () => {
     return (
         <header className="navbar">
             <NavLink to="/" className="navbar-brand">
-                <span className="navbar-logo">N</span>
-                News Today
+                <span className="navbar-logo">LC</span>
+                Actualidad Las Cabezas
             </NavLink>
             <nav className="navbar-links">
                 {links.map((link) => (
@@ -55,9 +55,6 @@ const Navbar = () => {
                         className="navbar-search-input"
                     />
                 </form>
-                <NavLink to="/suscripcion" className="navbar-action">
-                    Suscríbete
-                </NavLink>
                 {isAuth ? (
                     <>
                         <NavLink to="/administracion" className="navbar-action">

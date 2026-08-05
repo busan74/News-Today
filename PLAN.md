@@ -13,24 +13,24 @@ News-Today/
 │   ├── Dockerfile
 │   └── src/
 │       ├── main.jsx, App.jsx, index.css
-│       ├── pages/       # Home, Navbar, Login, Suscripcion, Administracion
-│       ├── Components/  # Actualidad, Deportes, Politica, etc.
+│       ├── pages/       # Home, Navbar, Login, Administracion, NoticiaDetalle
+│       ├── Components/  # Actualidad, Deportes, Politica, etc. + Anuncio
 │       └── services/api.js
 ├── Backend/             # API Express + Supabase (PostgREST + Auth)
 │   ├── Server.js        # entrada: arranca la API (http/https opcional)
 │   ├── app.js           # app Express (separada para tests)
 │   ├── config/          # env.js, supabase.js (cliente + fake para tests), sembrar.js
-│   ├── controllers/     # auth, noticias, categorias, suscripciones, webhook
-│   ├── routes/          # /api/auth, /api/noticias, /api/categorias, /api/suscripcion
+│   ├── controllers/     # auth, noticias, categorias, anuncios
+│   ├── routes/          # /api/auth, /api/noticias, /api/categorias, /api/anuncios
 │   ├── middleware/      # auth (JWT de Supabase verificado por JWKS), errores
-│   ├── services/        # email.js, stripe.js
-│   ├── tests/           # Vitest + supertest + fakeSupabase.js (23 tests)
-│   ├── seed.js          # categorías + admin + 17 noticias
+│   ├── services/        # stripe.js (Fase 2: cobro de anuncios)
+│   ├── tests/           # Vitest + supertest + fakeSupabase.js (24 tests)
+│   ├── seed.js          # categorías + admin + 17 noticias + 2 anuncios de ejemplo
 │   ├── Dockerfile       # imagen del backend (node:22-alpine)
 │   ├── package.json
 │   └── .env / .env.example
 ├── supabase/
-│   └── schema.sql       # tablas (categorias, noticias, profiles, suscripciones) + RLS
+│   └── schema.sql       # tablas (categorias, noticias, profiles, anuncios) + RLS
 ├── docker-compose.yml   # backend + frontend (sin Mongo: la BD es Supabase en la nube)
 └── PLAN.md
 ```
@@ -40,7 +40,7 @@ News-Today/
 ### 0. Preparar Supabase (una sola vez)
 
 1. Crea el proyecto en https://supabase.com (si no existe) con las claves de `Backend/.env` (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`).
-2. En el Dashboard → **SQL Editor** → New query, pega el contenido de `supabase/schema.sql` y ejecútalo (crea `categorias`, `noticias`, `profiles`, `suscripciones` + RLS).
+2. En el Dashboard → **SQL Editor** → New query, pega el contenido de `supabase/schema.sql` y ejecútalo (crea `categorias`, `noticias`, `profiles`, `anuncios` + RLS; y elimina la antigua tabla `suscripciones`).
 3. En **Authentication → Settings**, desactiva el campo *Confirm email* (o el email confirmado no podrá iniciar sesión hasta confirmarlo) si quieres login inmediato.
 4. Lanza el seed para cargar datos de ejemplo y el admin:
    ```bash
@@ -83,9 +83,18 @@ cd Frontend && npm install && npm run dev
 # Frontend (11 tests: ArticleCard, NewsSection, Login, NotFound)
 cd Frontend && npm test
 
-# Backend (23 tests: auth, noticias, categorías, suscripciones)
+# Backend (24 tests: auth, noticias, categorías, anuncios)
 cd Backend && npm test
 ```
 
 - Los tests del backend usan un **fake de Supabase** (`Backend/tests/fakeSupabase.js`): una implementación en memoria de `from().select().eq().or().insert()…` y de `auth.admin.createUser`/`signInWithPassword`. Se activa automáticamente con `NODE_ENV=test`, sin tocar la red ni la nube.
 - `config/supabase.js` devuelve el fake cuando `NODE_ENV=test`; en cualquier otro entorno crea el cliente real con `SUPABASE_SECRET_KEY`.
+
+## Monetización (Fase 1 completada)
+
+- Se eliminó la **suscripción de pago del lector** (página, endpoint y tabla `suscripciones`). La monetización es publicitaria.
+- Sistema de **anuncios** de comercios locales con dos formatos: **imagen** y **video** (15-20 s, autoplay silenciado).
+- Tabla `public.anuncios`: `empresa`, `tipo` (`imagen`/`video`), `contenido` (URL), `enlace`, `activo`, `fecha_inicio/fin` opcionales, y `stripe_customer_id`/`stripe_subscription_id` reservados para la Fase 2.
+- Endpoints: `GET /api/anuncios` (público, solo activos) · `GET /api/anuncios/todos`, `POST`, `PUT/:id`, `DELETE/:id` (admin).
+- Los anuncios se muestran en el **Home** (dos slots) y en **detalle de noticia** (uno). El admin los gestiona desde el panel de Administración.
+- **Fase 2 (pendiente)**: autoservicio "Pon aquí tu publicidad" — el comercio sube imagen/video, paga con Stripe (suscripción mensual, dos precios), y un webhook activa/desactiva el anuncio; cancelación/renovación vía Customer Portal de Stripe. Los campos `stripe_*` de la tabla ya están preparados.

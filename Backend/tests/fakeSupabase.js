@@ -9,7 +9,7 @@ const obtenerEstado = () => {
         categorias: { unicos: ['slug'], filas: [] },
         noticias: { unicos: [], filas: [] },
         profiles: { unicos: ['username', 'email'], filas: [] },
-        suscripciones: { unicos: ['email'], filas: [] },
+        anuncios: { unicos: [], filas: [] },
       },
       authUsers: [],
     }
@@ -55,7 +55,7 @@ const DEFAULTS = {
   noticias: { imagen: '', fecha: null },
   categorias: {},
   profiles: { role: 'editor' },
-  suscripciones: { estado: 'activa', plan: 'gratis', stripe_customer_id: '', stripe_subscription_id: '' },
+  anuncios: { tipo: 'imagen', enlace: '', activo: false, fecha_inicio: null, fecha_fin: null, stripe_customer_id: '', stripe_subscription_id: '' },
 }
 
 class Builder {

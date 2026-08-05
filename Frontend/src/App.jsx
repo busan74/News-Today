@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from './pages/Navbar'
 import Home from './pages/Home'
 import Login from './pages/Login'
-import Suscripcion from './pages/Suscripcion'
 import Administracion from './pages/Administracion'
 import NoticiaDetalle from './pages/NoticiaDetalle'
 import Busqueda from './pages/Busqueda'
@@ -68,7 +67,6 @@ function App() {
                 <Route path="/noticia/:id" element={<NoticiaDetalle />} />
                 <Route path="/busqueda" element={<Busqueda />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/suscripcion" element={<Suscripcion />} />
                 <Route
                     path="/administracion"
                     element={

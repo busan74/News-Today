@@ -9,8 +9,8 @@ const Footer = () => {
             <div className="footer-grid">
                 <div className="footer-col">
                     <div className="footer-brand">
-                        <span className="navbar-logo">N</span>
-                        <h3>News Today</h3>
+                        <span className="navbar-logo">LC</span>
+                        <h3>Actualidad Las Cabezas</h3>
                     </div>
                     <p>
                         Tu fuente diaria de actualidad, deportes, política y mucho
@@ -30,14 +30,13 @@ const Footer = () => {
                 <div className="footer-col">
                     <h4>Cuenta</h4>
                     <nav className="footer-nav" aria-label="Cuenta">
-                        <Link to="/suscripcion">Suscribirse</Link>
                         <Link to="/login">Iniciar sesión</Link>
                         <Link to="/administracion">Administración</Link>
                     </nav>
                 </div>
             </div>
             <div className="footer-bottom">
-                © {anio} News Today. Todos los derechos reservados.
+                © {anio} Actualidad Las Cabezas. Todos los derechos reservados.
             </div>
         </footer>
     )

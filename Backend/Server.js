@@ -35,7 +35,7 @@ const arrancar = () => {
   process.on('SIGTERM', () => cerrar('SIGTERM'))
 
   servidor.listen(config.PORT, () => {
-    console.log(`News Today API escuchando en ${protocolo}://localhost:${config.PORT} (${config.NODE_ENV})`)
+    console.log(`Actualidad Las Cabezas API escuchando en ${protocolo}://localhost:${config.PORT} (${config.NODE_ENV})`)
   })
 }
 

@@ -32,6 +32,23 @@ const noticias = [
   { categoria: 'empleo', titulo: 'Ferias de empleo en toda la región', texto: 'Revisa el calendario de eventos para conectar con reclutadores.', fecha: '2026-08-01T09:45:00.000Z' },
 ]
 
+const anuncios = [
+  {
+    empresa: 'Cafetería El Rincón',
+    tipo: 'imagen',
+    contenido: 'https://picsum.photos/seed/rincon/1200/300',
+    enlace: 'https://example.com/el-rincon',
+    activo: true,
+  },
+  {
+    empresa: 'Gimnasio Vital',
+    tipo: 'video',
+    contenido: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    enlace: 'https://example.com/gimnasio-vital',
+    activo: true,
+  },
+]
+
 const contar = async (supabase, tabla) => {
   const { count, error } = await supabase.from(tabla).select('id', { count: 'exact', head: true })
   if (error) throw error
@@ -111,11 +128,22 @@ const sembrarNoticias = async (supabase) => {
   console.log('[seed] Noticias creadas:', noticias.length)
 }
 
+const sembrarAnuncios = async (supabase) => {
+  if ((await contar(supabase, 'anuncios')) > 0) {
+    console.log('[seed] Anuncios ya existentes, se omiten.')
+    return
+  }
+  const { error } = await supabase.from('anuncios').insert(anuncios)
+  if (error) throw error
+  console.log('[seed] Anuncios creados:', anuncios.length)
+}
+
 const sembrar = async () => {
   const supabase = getSupabase()
   await sembrarCategorias(supabase)
   await sembrarAdmin(supabase)
   await sembrarNoticias(supabase)
+  await sembrarAnuncios(supabase)
 }
 
 module.exports = { sembrar }

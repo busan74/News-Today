@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const SITE_NAME = 'News Today'
+const SITE_NAME = 'Actualidad Las Cabezas'
 
 export const usePageMeta = ({ title, description } = {}) => {
     useEffect(() => {

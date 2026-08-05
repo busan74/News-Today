@@ -53,3 +53,7 @@ export const getCategorias = async () => {
 export const getNoticia = async (id) => {
     return Api.get(`/noticias/${id}`)
 }
+
+export const getAnuncios = async () => {
+    return Api.get('/anuncios')
+}

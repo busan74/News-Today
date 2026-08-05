@@ -2,7 +2,7 @@
   "name": "news-today-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "API de noticias de News Today",
+  "description": "API de noticias de Actualidad Las Cabezas",
   "main": "Server.js",
   "scripts": {
     "start": "node Server.js",

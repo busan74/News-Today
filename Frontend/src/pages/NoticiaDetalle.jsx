@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getNoticia } from '../services/api'
 import { useNoticias } from '../hooks/useNoticias'
 import ArticleCard from '../Components/ArticleCard'
+import Anuncio from '../Components/Anuncio'
 import { formatearFecha, NOMBRES_CATEGORIAS } from '../utils/format'
 import { usePageMeta } from '../hooks/usePageMeta'
 
@@ -84,6 +85,7 @@ const NoticiaDetalle = () => {
                 )}
                 <p className="detail-body">{noticia.texto}</p>
             </article>
+            <Anuncio slot={0} />
             {relacionadasCat.length > 0 && (
                 <section className="section">
                     <h2 className="section-title">Relacionadas</h2>

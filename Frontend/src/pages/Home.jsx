@@ -6,12 +6,13 @@ import Sociedad from '../Components/Sociedad'
 import Sucesos from '../Components/Sucesos'
 import Tiempo from '../Components/Tiempo'
 import Empleo from '../Components/Empleo'
+import Anuncio from '../Components/Anuncio'
 import { usePageMeta } from '../hooks/usePageMeta'
 
 const Home = () => {
     usePageMeta({
         title: 'Inicio',
-        description: 'Toda la actualidad del día en News Today.',
+        description: 'Toda la actualidad del día en Actualidad Las Cabezas.',
     })
 
     return (
@@ -23,12 +24,14 @@ const Home = () => {
                 </p>
             </section>
             <Actualidad />
+            <Anuncio slot={0} />
             <section className="home-grid">
                 <Deportes />
                 <Politica />
                 <Sociedad />
                 <Sucesos />
             </section>
+            <Anuncio slot={1} />
             <section className="home-grid">
                 <Tiempo />
                 <Empleo />

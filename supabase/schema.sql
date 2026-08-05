@@ -1,5 +1,5 @@
 -- ============================================================
--- News Today · Esquema de Supabase (PostgreSQL)
+-- Actualidad Las Cabezas · Esquema de Supabase (PostgreSQL)
 -- Ejecutar en: Supabase Dashboard → SQL Editor → New query
 -- (o con la CLI: supabase db push)
 -- ============================================================
@@ -44,19 +44,25 @@ create table if not exists public.profiles (
 );
 
 -- ------------------------------------------------------------
--- Suscripciones
+-- Anuncios (publicidad de comercios locales)
+-- La suscripción de pago del lector se eliminó; la monetización
+-- es publicitaria. stripe_* se usa en la Fase 2 (autoservicio).
 -- ------------------------------------------------------------
-create table if not exists public.suscripciones (
+create table if not exists public.anuncios (
   id uuid primary key default gen_random_uuid(),
-  email text not null unique,
-  estado text not null default 'activa' check (estado in ('pendiente', 'activa', 'cancelada')),
-  plan text not null default 'gratis',
+  empresa text not null,
+  tipo text not null default 'imagen' check (tipo in ('imagen', 'video')),
+  contenido text not null,
+  enlace text not null default '',
+  activo boolean not null default false,
+  fecha_inicio timestamptz,
+  fecha_fin timestamptz,
   stripe_customer_id text not null default '',
   stripe_subscription_id text not null default '',
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_suscripciones_email on public.suscripciones (email);
+create index if not exists idx_anuncios_activo on public.anuncios (activo);
 
 -- ------------------------------------------------------------
 -- Row Level Security
@@ -66,7 +72,7 @@ create index if not exists idx_suscripciones_email on public.suscripciones (emai
 alter table public.categorias enable row level security;
 alter table public.noticias enable row level security;
 alter table public.profiles enable row level security;
-alter table public.suscripciones enable row level security;
+alter table public.anuncios enable row level security;
 
 -- Lectura pública de categorías y noticias (para el sitio)
 create policy "categorias lectura publica" on public.categorias
@@ -75,6 +81,9 @@ create policy "categorias lectura publica" on public.categorias
 create policy "noticias lectura publica" on public.noticias
   for select using (true);
 
+create policy "anuncios lectura publica" on public.anuncios
+  for select using (activo = true);
+
 -- El usuario solo ve/edita su propio perfil
 create policy "profiles propio perfil" on public.profiles
   for select using (auth.uid() = id);
@@ -82,6 +91,5 @@ create policy "profiles propio perfil" on public.profiles
 create policy "profiles actualizar propio" on public.profiles
   for update using (auth.uid() = id);
 
--- Alta directa de suscripciones (opcional: si algún día el cliente habla con Supabase)
-create policy "suscripciones alta publica" on public.suscripciones
-  for insert with check (true);
+-- Si ya tenías la tabla de suscripciones de la versión anterior:
+drop table if exists public.suscripciones cascade;
