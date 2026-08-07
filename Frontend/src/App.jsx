@@ -15,7 +15,7 @@ import Politica from './Components/Politica'
 import Sociedad from './Components/Sociedad'
 import Sucesos from './Components/Sucesos'
 import Tiempo from './Components/Tiempo'
-import Empleo from './Components/Empleo'
+import Tablon from './Components/Tablon'
 import { usePageMeta } from './hooks/usePageMeta'
 
 const CATEGORIAS_DESC = {
@@ -26,7 +26,7 @@ const CATEGORIAS_DESC = {
     sociedad: 'La actualidad social, cultural y comunitaria.',
     sucesos: 'Información y novedades sobre sucesos y seguridad.',
     tiempo: 'El pronóstico del tiempo para tu día a día.',
-    empleo: 'Ofertas y novedades del mercado laboral.',
+    empleo: 'Anuncios, avisos y novedades del municipio.',
 }
 
 const SectionPage = ({ title, description, children }) => {
@@ -63,7 +63,7 @@ function App() {
                 <Route path="/sociedad" element={<Categoria slug="sociedad"><Sociedad /></Categoria>} />
                 <Route path="/sucesos" element={<Categoria slug="sucesos"><Sucesos /></Categoria>} />
                 <Route path="/tiempo" element={<Categoria slug="tiempo"><Tiempo /></Categoria>} />
-                <Route path="/empleo" element={<Categoria slug="empleo"><Empleo /></Categoria>} />
+                <Route path="/tablon" element={<Categoria slug="empleo"><Tablon /></Categoria>} />
                 <Route path="/noticia/:id" element={<NoticiaDetalle />} />
                 <Route path="/busqueda" element={<Busqueda />} />
                 <Route path="/login" element={<Login />} />

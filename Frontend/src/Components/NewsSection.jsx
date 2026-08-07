@@ -1,7 +1,7 @@
 import { useNoticias } from '../hooks/useNoticias'
 import ArticleCard from './ArticleCard'
 
-const NewsSection = ({ titulo, categoria, featured = false, children }) => {
+const NewsSection = ({ titulo, categoria, children }) => {
     const { noticias, loading, error } = useNoticias(categoria)
 
     return (
@@ -14,12 +14,8 @@ const NewsSection = ({ titulo, categoria, featured = false, children }) => {
             )}
             {noticias && noticias.length > 0 && (
                 <div className="articles">
-                    {noticias.map((n, i) => (
-                        <ArticleCard
-                            key={n.id}
-                            noticia={n}
-                            featured={featured && i === 0}
-                        />
+                    {noticias.map((n) => (
+                        <ArticleCard key={n.id} noticia={n} />
                     ))}
                 </div>
             )}

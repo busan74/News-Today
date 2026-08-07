@@ -4,7 +4,8 @@ import { getNoticia } from '../services/api'
 import { useNoticias } from '../hooks/useNoticias'
 import ArticleCard from '../Components/ArticleCard'
 import Anuncio from '../Components/Anuncio'
-import { formatearFecha, NOMBRES_CATEGORIAS } from '../utils/format'
+import VideoConRespaldo from '../Components/VideoConRespaldo'
+import { formatearFecha, NOMBRES_CATEGORIAS, esVideo, rutaCompleta } from '../utils/format'
 import { usePageMeta } from '../hooks/usePageMeta'
 
 const nombreCategoria = (slug) => NOMBRES_CATEGORIAS[slug] || slug
@@ -72,13 +73,21 @@ const NoticiaDetalle = () => {
                 <span className="detail-category">
                     {nombreCategoria(noticia.categoria)}
                 </span>
-                {noticia.imagen && (
-                    <img
-                        className="detail-image"
-                        src={noticia.imagen}
-                        alt={noticia.titulo}
-                    />
-                )}
+                {noticia.imagen &&
+                    (esVideo(noticia.imagen) ? (
+                        <VideoConRespaldo
+                            className="detail-image"
+                            src={rutaCompleta(noticia.imagen)}
+                            controls
+                            playsInline
+                        />
+                    ) : (
+                        <img
+                            className="detail-image"
+                            src={rutaCompleta(noticia.imagen)}
+                            alt={noticia.titulo}
+                        />
+                    ))}
                 <h1 className="detail-title">{noticia.titulo}</h1>
                 {noticia.fecha && (
                     <time className="detail-date">{formatearFecha(noticia.fecha)}</time>

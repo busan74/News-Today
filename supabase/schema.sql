@@ -26,11 +26,17 @@ create table if not exists public.noticias (
   texto text not null,
   imagen text not null default '',
   fecha timestamptz not null default now(),
+  portada boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 create index if not exists idx_noticias_categoria on public.noticias (categoria);
 create index if not exists idx_noticias_fecha on public.noticias (fecha desc);
+
+-- Migración: columna portada (noticia principal de la home)
+-- Idempotente: no falla si ya existe ni la elimina si hay datos.
+alter table public.noticias
+  add column if not exists portada boolean not null default false;
 
 -- ------------------------------------------------------------
 -- Perfiles (uno por usuario de auth.users; aquí viven username y role)
@@ -75,19 +81,25 @@ alter table public.profiles enable row level security;
 alter table public.anuncios enable row level security;
 
 -- Lectura pública de categorías y noticias (para el sitio)
+-- Se eliminan antes de crear para que el script se pueda re-ejecutar.
+drop policy if exists "categorias lectura publica" on public.categorias;
 create policy "categorias lectura publica" on public.categorias
   for select using (true);
 
+drop policy if exists "noticias lectura publica" on public.noticias;
 create policy "noticias lectura publica" on public.noticias
   for select using (true);
 
+drop policy if exists "anuncios lectura publica" on public.anuncios;
 create policy "anuncios lectura publica" on public.anuncios
   for select using (activo = true);
 
 -- El usuario solo ve/edita su propio perfil
+drop policy if exists "profiles propio perfil" on public.profiles;
 create policy "profiles propio perfil" on public.profiles
   for select using (auth.uid() = id);
 
+drop policy if exists "profiles actualizar propio" on public.profiles;
 create policy "profiles actualizar propio" on public.profiles
   for update using (auth.uid() = id);
 

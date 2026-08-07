@@ -54,6 +54,10 @@ export const getNoticia = async (id) => {
     return Api.get(`/noticias/${id}`)
 }
 
+export const getPortada = async () => {
+    return Api.get('/noticias/portada')
+}
+
 export const getAnuncios = async () => {
     return Api.get('/anuncios')
 }

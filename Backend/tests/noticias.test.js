@@ -61,6 +61,60 @@ describe('Noticias', () => {
     expect(res.status).toBe(404)
   })
 
+  describe('portada', () => {
+    it('devuelve la noticia marcada como portada', async () => {
+      const token = await crearAdmin()
+      await request(app)
+        .post('/api/noticias')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ categoria: 'actualidad', titulo: 'Nuevo enlace a la AP-4', texto: 'Obras finalizadas.', portada: true })
+      await request(app)
+        .post('/api/noticias')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ categoria: 'deportes', titulo: 'Final definida', texto: 'Gran partido.' })
+
+      const res = await request(app).get('/api/noticias/portada')
+      expect(res.status).toBe(200)
+      expect(res.body.data.titulo).toBe('Nuevo enlace a la AP-4')
+      expect(res.body.data.portada).toBe(true)
+    })
+
+    it('solo hay una portada: marcar otra la quita de la anterior', async () => {
+      const token = await crearAdmin()
+      const primera = await request(app)
+        .post('/api/noticias')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ categoria: 'actualidad', titulo: 'Portada A', texto: 'Texto', portada: true })
+      const segunda = await request(app)
+        .post('/api/noticias')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ categoria: 'actualidad', titulo: 'Portada B', texto: 'Texto', portada: true })
+
+      const portada1 = await request(app).get('/api/noticias/portada')
+      expect(portada1.body.data.id).toBe(segunda.body.data.id)
+
+      await request(app)
+        .put(`/api/noticias/${primera.body.data.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ portada: true })
+
+      const portada2 = await request(app).get('/api/noticias/portada')
+      expect(portada2.body.data.id).toBe(primera.body.data.id)
+    })
+
+    it('si no hay portada marcada usa la noticia más reciente', async () => {
+      const token = await crearAdmin()
+      await request(app)
+        .post('/api/noticias')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ categoria: 'tiempo', titulo: 'Reciente', texto: 'Última hora.' })
+
+      const res = await request(app).get('/api/noticias/portada')
+      expect(res.status).toBe(200)
+      expect(res.body.data.titulo).toBe('Reciente')
+    })
+  })
+
   describe('rutas protegidas', () => {
     it('rechaza crear sin token', async () => {
       const res = await request(app)

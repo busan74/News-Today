@@ -88,6 +88,26 @@ describe('Anuncios', () => {
     expect(res.body.data).toHaveLength(0)
   })
 
+  it('filtra por ventana de fechas: futuro no aparece', async () => {
+    const token = await registrarAdmin()
+    const en = (dias) => new Date(Date.now() + dias * 86400000).toISOString()
+
+    await request(app)
+      .post('/api/anuncios')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ empresa: 'Activo hoy', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true })
+    await request(app)
+      .post('/api/anuncios')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ empresa: 'Futuro', tipo: 'imagen', contenido: 'https://img.example/f.png', activo: true, fecha_inicio: en(5) })
+
+    const res = await request(app).get('/api/anuncios')
+    expect(res.status).toBe(200)
+    const empresas = res.body.data.map((a) => a.empresa)
+    expect(empresas).toContain('Activo hoy')
+    expect(empresas).not.toContain('Futuro')
+  })
+
   it('exige admin para crear y listar todos', async () => {
     const crearSinToken = await request(app).post('/api/anuncios').send({ empresa: 'X', contenido: 'y' })
     expect(crearSinToken.status).toBe(401)

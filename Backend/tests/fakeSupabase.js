@@ -24,23 +24,50 @@ const convertirILike = (valor) => {
   return new RegExp(patron, 'i')
 }
 
+const dividirTopLevel = (s) => {
+  const partes = []
+  let nivel = 0
+  let inicio = 0
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    if (c === '(') nivel++
+    else if (c === ')') nivel--
+    else if (c === ',' && nivel === 0) {
+      partes.push(s.slice(inicio, i))
+      inicio = i + 1
+    }
+  }
+  partes.push(s.slice(inicio))
+  return partes
+}
+
 const parsearOr = (filtro) =>
-  filtro
-    .split(',')
+  dividirTopLevel(filtro)
     .map((parte) => {
+      const anidado = parte.match(/^and\((.*)\)$/)
+      if (anidado) return { op: 'and', condiciones: parsearOr(anidado[1]) }
       const m = parte.match(/^([\w]+)\.([\w]+)\.(.*)$/)
-      return m ? { campo: m[1], op: m[2], valor: m[3] } : null
+      if (!m) return null
+      const valor = m[3].replace(/^"(.*)"$/, '$1').replace(/""/g, '"')
+      return { campo: m[1], op: m[2], valor }
     })
     .filter(Boolean)
 
 const coincide = (fila, { op, campo, valor, condiciones }) => {
   if (op === 'or') return condiciones.some((c) => coincide(fila, c))
+  if (op === 'and') return condiciones.every((c) => coincide(fila, c))
   const v = fila[campo]
   switch (op) {
     case 'eq':
       return String(v ?? '') === String(valor)
     case 'neq':
       return String(v ?? '') !== String(valor)
+    case 'is':
+      return valor === 'null' ? v === null || v === undefined : v === valor
+    case 'lte':
+      return v === null || v === undefined || v <= valor
+    case 'gte':
+      return v === null || v === undefined || v >= valor
     case 'ilike':
       return convertirILike(valor).test(String(v ?? ''))
     default:
@@ -52,7 +79,7 @@ const aplicarFiltros = (filas, filtros) =>
   filas.filter((fila) => filtros.every((f) => coincide(fila, f)))
 
 const DEFAULTS = {
-  noticias: { imagen: '', fecha: null },
+  noticias: { imagen: '', fecha: null, portada: false },
   categorias: {},
   profiles: { role: 'editor' },
   anuncios: { tipo: 'imagen', enlace: '', activo: false, fecha_inicio: null, fecha_fin: null, stripe_customer_id: '', stripe_subscription_id: '' },

@@ -26,4 +26,18 @@ const getSupabase = () => {
   return cliente
 }
 
-module.exports = { getSupabase }
+const getClienteAuth = () => {
+  if (config.NODE_ENV === 'test') return getSupabase()
+  if (!config.SUPABASE_URL || !config.SUPABASE_SECRET_KEY) {
+    throw new Error('[supabase] Falta configurar SUPABASE_URL y SUPABASE_SECRET_KEY en Backend/.env')
+  }
+  return createClient(config.SUPABASE_URL, config.SUPABASE_SECRET_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    realtime: { transport: ws },
+  })
+}
+
+module.exports = { getSupabase, getClienteAuth }

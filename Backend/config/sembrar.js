@@ -9,7 +9,7 @@ const categorias = [
   { slug: 'sociedad', nombre: 'Sociedad' },
   { slug: 'sucesos', nombre: 'Sucesos' },
   { slug: 'tiempo', nombre: 'Tiempo' },
-  { slug: 'empleo', nombre: 'Empleo' },
+  { slug: 'empleo', nombre: 'Tablón' },
 ]
 
 const noticias = [
@@ -30,6 +30,7 @@ const noticias = [
   { categoria: 'tiempo', titulo: 'Aviso por tormentas en la costa', texto: 'Protección civil pide precaución en zonas litorales durante el fin de semana.', fecha: '2026-08-03T15:50:00.000Z' },
   { categoria: 'empleo', titulo: 'Crece la oferta de empleo tecnológico', texto: 'Las empresas buscan desarrolladores y perfiles digitales con urgencia.', fecha: '2026-08-04T12:10:00.000Z' },
   { categoria: 'empleo', titulo: 'Ferias de empleo en toda la región', texto: 'Revisa el calendario de eventos para conectar con reclutadores.', fecha: '2026-08-01T09:45:00.000Z' },
+  { categoria: 'actualidad', titulo: 'Nuevo enlace a la AP-4 para conectar el municipio', texto: 'Ya está operativo el nuevo enlace a la autovía AP-4, que mejora la conexión del municipio con Sevilla y Cádiz. El acceso reduce los tiempos de desplazamiento y descongestiona el tráfico por el casco urbano.', fecha: '2026-08-06T09:00:00.000Z', portada: true },
 ]
 
 const anuncios = [
@@ -45,6 +46,20 @@ const anuncios = [
     tipo: 'video',
     contenido: 'https://www.w3schools.com/html/mov_bbb.mp4',
     enlace: 'https://example.com/gimnasio-vital',
+    activo: true,
+  },
+  {
+    empresa: 'Ferretería La Llave',
+    tipo: 'imagen',
+    contenido: 'https://picsum.photos/seed/llave/1200/300',
+    enlace: 'https://example.com/ferreteria',
+    activo: true,
+  },
+  {
+    empresa: 'Panadería San Juan',
+    tipo: 'imagen',
+    contenido: 'https://picsum.photos/seed/panaderia/1200/300',
+    enlace: 'https://example.com/panaderia',
     activo: true,
   },
 ]
@@ -121,27 +136,67 @@ const sembrarAdmin = async (supabase) => {
 }
 
 const sembrarNoticias = async (supabase, pueblo) => {
-  if ((await contar(supabase, 'noticias', pueblo)) > 0) {
-    console.log(`[seed] Noticias de ${pueblo} ya existentes, se omiten.`)
-    return
+  const { data: existentes, error: errorListado } = await supabase
+    .from('noticias')
+    .select('titulo')
+    .eq('pueblo', pueblo)
+  if (errorListado) throw errorListado
+
+  const titulosExistentes = new Set((existentes || []).map((n) => n.titulo))
+  let creadas = 0
+
+  for (const [i, n] of noticias.entries()) {
+    if (titulosExistentes.has(n.titulo)) continue
+    const { error } = await supabase.from('noticias').insert({
+      ...n,
+      pueblo,
+      imagen: `/images/noticia-${i + 1}.jpg`,
+    })
+    if (error) throw error
+    creadas++
   }
-  const { error } = await supabase.from('noticias').insert(
-    noticias.map((n, i) => ({ ...n, pueblo, imagen: `/images/noticia-${i + 1}.jpg` }))
+
+  const portada = noticias.find((n) => n.portada)
+  if (portada && !titulosExistentes.has(portada.titulo)) {
+    const { error: errorDesmarcar } = await supabase
+      .from('noticias')
+      .update({ portada: false })
+      .eq('pueblo', pueblo)
+    if (errorDesmarcar) throw errorDesmarcar
+
+    const { error: errorMarcar } = await supabase
+      .from('noticias')
+      .update({ portada: true })
+      .eq('pueblo', pueblo)
+      .eq('titulo', portada.titulo)
+    if (errorMarcar) throw errorMarcar
+  }
+
+  console.log(
+    `[seed] Noticias de ${pueblo}: ${titulosExistentes.size + creadas} en total, ${creadas} creadas.`
   )
-  if (error) throw error
-  console.log(`[seed] Noticias creadas (${pueblo}):`, noticias.length)
 }
 
 const sembrarAnuncios = async (supabase, pueblo) => {
-  if ((await contar(supabase, 'anuncios', pueblo)) > 0) {
-    console.log(`[seed] Anuncios de ${pueblo} ya existentes, se omiten.`)
-    return
+  const { data: existentes, error: errorListado } = await supabase
+    .from('anuncios')
+    .select('empresa')
+    .eq('pueblo', pueblo)
+  if (errorListado) throw errorListado
+
+  const empresasExistentes = new Set((existentes || []).map((a) => a.empresa))
+  let creados = 0
+
+  for (const a of anuncios) {
+    if (empresasExistentes.has(a.empresa)) continue
+    const { error } = await supabase.from('anuncios').insert({ ...a, pueblo })
+    if (error) throw error
+    creados++
   }
-  const { error } = await supabase.from('anuncios').insert(
-    anuncios.map((a) => ({ ...a, pueblo }))
+
+  console.log(
+    `[seed] Anuncios de ${pueblo}: ${empresasExistentes.size + creados} en total, ${creados} creados.`
   )
-  if (error) throw error
-  console.log(`[seed] Anuncios creados (${pueblo}):`, anuncios.length)
 }
 
 const PUEBLOS_SEED = ['lascabezas', 'lebrija', 'elcuervo']

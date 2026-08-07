@@ -1,11 +1,4 @@
-import Actualidad from '../Components/Actualidad'
-import Deportes from '../Components/Deportes'
-import Pasatiempos from '../Components/Pasatiempos'
-import Politica from '../Components/Politica'
-import Sociedad from '../Components/Sociedad'
-import Sucesos from '../Components/Sucesos'
-import Tiempo from '../Components/Tiempo'
-import Empleo from '../Components/Empleo'
+import Portada from '../Components/Portada'
 import Anuncio from '../Components/Anuncio'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { usePueblo } from '../hooks/usePueblo'
@@ -18,27 +11,38 @@ const Home = () => {
     })
 
     return (
-        <main id="main" className="home">
-            <section className="breaking">
-                <span className="breaking-badge">Última hora</span>
-                <p className="breaking-text">
-                    La actualidad del día, minuto a minuto, en un solo lugar.
-                </p>
-            </section>
-            <Actualidad />
-            <Anuncio slot={0} />
-            <section className="home-grid">
-                <Deportes />
-                <Politica />
-                <Sociedad />
-                <Sucesos />
-            </section>
-            <Anuncio slot={1} />
-            <section className="home-grid">
-                <Tiempo />
-                <Empleo />
-                <Pasatiempos />
-            </section>
+        <main id="main" className="home home--portada-ancha">
+            <div className="home-interior">
+                <section className="breaking">
+                    <span className="breaking-badge">Última hora</span>
+                    <p className="breaking-text">
+                        La actualidad del día, minuto a minuto, en un solo lugar.
+                    </p>
+                </section>
+            </div>
+            <div className="portada-fila">
+                <aside className="portada-lateral" aria-label="Publicidad">
+                    <div className="portada-lateral-inner">
+                        <Anuncio slot={0} />
+                        <Anuncio slot={1} />
+                        <Anuncio slot={2} />
+                    </div>
+                </aside>
+                <Portada />
+                <aside className="portada-lateral" aria-label="Publicidad">
+                    <div className="portada-lateral-inner">
+                        <Anuncio slot={3} />
+                        <Anuncio slot={4} />
+                        <Anuncio slot={5} />
+                    </div>
+                </aside>
+            </div>
+            <div className="home-interior">
+                <div className="anuncios-grandes">
+                    <Anuncio slot={6} />
+                    <Anuncio slot={7} />
+                </div>
+            </div>
         </main>
     )
 }

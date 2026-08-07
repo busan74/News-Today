@@ -1,12 +1,13 @@
 const { Router } = require('express')
 const { body } = require('express-validator')
-const { listar, obtener, crear, actualizar, eliminar } = require('../controllers/noticiaController')
+const { listar, obtenerPortada, obtener, crear, actualizar, eliminar } = require('../controllers/noticiaController')
 const { requireAuth } = require('../middleware/auth')
 const { validarResultados } = require('../middleware/errores')
 
 const router = Router()
 
 router.get('/', listar)
+router.get('/portada', obtenerPortada)
 router.get('/:id', obtener)
 
 router.post(

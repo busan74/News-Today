@@ -9,6 +9,7 @@ const serializarNoticia = (n) => ({
   texto: n.texto,
   imagen: n.imagen,
   fecha: n.fecha,
+  portada: Boolean(n.portada),
   pueblo: n.pueblo,
 })
 
@@ -19,12 +20,48 @@ const listar = async (req, res) => {
 
   let query = supabase.from('noticias').select('*').eq('pueblo', pueblo).order('fecha', { ascending: false })
   if (categoria) query = query.eq('categoria', categoria)
-  if (q) query = query.or(`titulo.ilike.%${q}%,texto.ilike.%${q}%`)
+  if (q) {
+    const termino = String(q).replace(/"/g, '""')
+    query = query.or(`titulo.ilike."%${termino}%",texto.ilike."%${termino}%"`)
+  }
 
   const { data, error } = await query
   if (error) throw error
 
   res.json({ success: true, data: (data || []).map(serializarNoticia) })
+}
+
+const obtenerPortada = async (req, res) => {
+  const pueblo = detectarPueblo(req)
+  const supabase = getSupabase()
+
+  let { data, error } = await supabase
+    .from('noticias')
+    .select('*')
+    .eq('pueblo', pueblo)
+    .eq('portada', true)
+    .order('fecha', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+
+  if (!data) {
+    const fallback = await supabase
+      .from('noticias')
+      .select('*')
+      .eq('pueblo', pueblo)
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (fallback.error) throw fallback.error
+    data = fallback.data
+  }
+
+  if (!data) {
+    return res.status(404).json({ success: false, error: 'No hay noticias todavía' })
+  }
+
+  res.json({ success: true, data: serializarNoticia(data) })
 }
 
 const obtener = async (req, res) => {
@@ -51,9 +88,17 @@ const obtener = async (req, res) => {
 }
 
 const crear = async (req, res) => {
-  const { categoria, titulo, texto, imagen, fecha } = req.body
+  const { categoria, titulo, texto, imagen, fecha, portada } = req.body
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
+
+  if (portada) {
+    const { error } = await supabase
+      .from('noticias')
+      .update({ portada: false })
+      .eq('pueblo', pueblo)
+    if (error) throw error
+  }
 
   const { data, error } = await supabase
     .from('noticias')
@@ -63,6 +108,7 @@ const crear = async (req, res) => {
       texto,
       imagen: imagen || '',
       fecha: fecha || new Date().toISOString(),
+      portada: Boolean(portada),
       pueblo,
     })
     .select()
@@ -73,7 +119,7 @@ const crear = async (req, res) => {
 }
 
 const actualizar = async (req, res) => {
-  const { categoria, titulo, texto, imagen, fecha } = req.body
+  const { categoria, titulo, texto, imagen, fecha, portada } = req.body
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
@@ -83,6 +129,17 @@ const actualizar = async (req, res) => {
   if (texto !== undefined) cambios.texto = texto
   if (imagen !== undefined) cambios.imagen = imagen
   if (fecha !== undefined) cambios.fecha = fecha
+  if (portada !== undefined) {
+    if (portada) {
+      const { error } = await supabase
+        .from('noticias')
+        .update({ portada: false })
+        .eq('pueblo', pueblo)
+        .neq('id', req.params.id)
+      if (error) throw error
+    }
+    cambios.portada = Boolean(portada)
+  }
 
   const { data, error } = await supabase
     .from('noticias')
@@ -130,4 +187,4 @@ const eliminar = async (req, res) => {
   res.json({ success: true, data: serializarNoticia(data) })
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar }
+module.exports = { listar, obtenerPortada, obtener, crear, actualizar, eliminar }

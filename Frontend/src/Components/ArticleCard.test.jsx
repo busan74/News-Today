@@ -14,16 +14,21 @@ const noticia = {
 const renderConRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe('ArticleCard', () => {
-    it('renderiza título, texto y fecha', () => {
+    it('renderiza título y fecha', () => {
         renderConRouter(<ArticleCard noticia={noticia} />)
 
         expect(
             screen.getByRole('heading', { name: 'Final del campeonato definida' })
         ).toBeInTheDocument()
-        expect(
-            screen.getByText('Los dos mejores equipos se enfrentarán el domingo.')
-        ).toBeInTheDocument()
         expect(screen.getByText('4 de agosto de 2026')).toBeInTheDocument()
+    })
+
+    it('oculta el texto de la noticia en la tarjeta', () => {
+        renderConRouter(<ArticleCard noticia={noticia} />)
+
+        expect(
+            screen.queryByText('Los dos mejores equipos se enfrentarán el domingo.')
+        ).not.toBeInTheDocument()
     })
 
     it('enlaza a la vista de detalle', () => {
@@ -31,13 +36,5 @@ describe('ArticleCard', () => {
 
         const link = screen.getByRole('link', { name: 'Leer más' })
         expect(link).toHaveAttribute('href', '/noticia/5')
-    })
-
-    it('aplica la clase featured cuando corresponde', () => {
-        const { container } = renderConRouter(
-            <ArticleCard noticia={noticia} featured />
-        )
-
-        expect(container.querySelector('.article.featured')).toBeInTheDocument()
     })
 })

@@ -1,3 +1,6 @@
+const path = require('path')
+const fs = require('fs')
+
 const { config } = require('./config/env')
 const { detectarPueblo, obtenerConfig, obtenerTodos } = require('./config/pueblos')
 
@@ -7,9 +10,13 @@ const auth = require('./routes/auth')
 const noticias = require('./routes/noticias')
 const categorias = require('./routes/categorias')
 const anuncios = require('./routes/anuncios')
+const uploads = require('./routes/uploads')
 const { errorHandler, notFound } = require('./middleware/errores')
 
 const app = express()
+
+const UPLOAD_DIR = path.join(__dirname, 'uploads')
+fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 
 const origenesPermitidos = new Set()
 if (!config.esProduccion) {
@@ -42,8 +49,10 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), (_re
   res.status(501).json({ success: false, error: 'Pago de anuncios no implementado (Fase 2)' })
 })
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '75mb' }))
+app.use(express.urlencoded({ extended: true, limit: '75mb' }))
+
+app.use('/uploads', express.static(UPLOAD_DIR))
 
 app.get('/', (req, res) => {
   res.json({
@@ -68,6 +77,7 @@ app.use('/api/auth', auth)
 app.use('/api/noticias', noticias)
 app.use('/api/categorias', categorias)
 app.use('/api/anuncios', anuncios)
+app.use('/api/upload', uploads)
 
 app.use(notFound)
 app.use(errorHandler)

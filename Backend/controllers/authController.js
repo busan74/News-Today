@@ -1,4 +1,4 @@
-const { getSupabase } = require('../config/supabase')
+const { getSupabase, getClienteAuth } = require('../config/supabase')
 
 const buscarPerfil = async (supabase, campo, valor) => {
   const { data, error } = await supabase.from('profiles').select('*').eq(campo, valor).maybeSingle()
@@ -49,7 +49,7 @@ const registrar = async (req, res) => {
     throw errorPerfil
   }
 
-  const { data: sesion, error: errorSesion } = await supabase.auth.signInWithPassword({
+  const { data: sesion, error: errorSesion } = await getClienteAuth().auth.signInWithPassword({
     email: correo,
     password,
   })
@@ -74,7 +74,7 @@ const iniciarSesion = async (req, res) => {
     return res.status(401).json({ success: false, error: 'Credenciales incorrectas' })
   }
 
-  const { data: sesion, error } = await supabase.auth.signInWithPassword({
+  const { data: sesion, error } = await getClienteAuth().auth.signInWithPassword({
     email: perfil.email,
     password,
   })

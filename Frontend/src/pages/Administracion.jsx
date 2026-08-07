@@ -4,8 +4,9 @@ import { Api } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
 import { formatearFecha, NOMBRES_CATEGORIAS } from '../utils/format'
 import { usePageMeta } from '../hooks/usePageMeta'
+import PreviaMultimedia from '../Components/PreviaMultimedia'
 
-const VACIO = { id: null, categoria: 'actualidad', titulo: '', texto: '', imagen: '' }
+const VACIO = { id: null, categoria: 'actualidad', titulo: '', texto: '', imagen: '', portada: false }
 
 const ANUNCIO_VACIO = {
     id: null,
@@ -26,6 +27,10 @@ const Administracion = () => {
     const [form, setForm] = useState(VACIO)
     const [anuncios, setAnuncios] = useState(null)
     const [anuncioForm, setAnuncioForm] = useState(ANUNCIO_VACIO)
+    const [subiendoImagen, setSubiendoImagen] = useState(false)
+    const [errorImagen, setErrorImagen] = useState('')
+    const [subiendoAnuncio, setSubiendoAnuncio] = useState(false)
+    const [errorAnuncio, setErrorAnuncio] = useState('')
 
     const manejarError = useCallback(
         (err) => {
@@ -95,11 +100,61 @@ const Administracion = () => {
             titulo: n.titulo,
             texto: n.texto,
             imagen: n.imagen || '',
+            portada: Boolean(n.portada),
         })
+        setErrorImagen('')
+    }
+
+    const subirImagen = async (e) => {
+        const archivo = e.target.files?.[0]
+        if (!archivo) return
+        setSubiendoImagen(true)
+        setErrorImagen('')
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const lector = new FileReader()
+                lector.onload = () => resolve(lector.result)
+                lector.onerror = () => reject(new Error('No se pudo leer el archivo'))
+                lector.readAsDataURL(archivo)
+            })
+            const res = await Api.post('/upload', { archivo: dataUrl })
+            setForm({ ...form, imagen: res.url })
+        } catch (err) {
+            setErrorImagen(err.message)
+        } finally {
+            setSubiendoImagen(false)
+        }
+    }
+
+    const subirContenidoAnuncio = async (e) => {
+        const archivo = e.target.files?.[0]
+        if (!archivo) return
+        setSubiendoAnuncio(true)
+        setErrorAnuncio('')
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const lector = new FileReader()
+                lector.onload = () => resolve(lector.result)
+                lector.onerror = () => reject(new Error('No se pudo leer el archivo'))
+                lector.readAsDataURL(archivo)
+            })
+            const res = await Api.post('/upload', { archivo: dataUrl })
+            setAnuncioForm({ ...anuncioForm, contenido: res.url })
+        } catch (err) {
+            setErrorAnuncio(err.message)
+        } finally {
+            setSubiendoAnuncio(false)
+        }
     }
 
     const cancelar = () => {
         setForm(VACIO)
+        setErrorImagen('')
+    }
+
+    const cancelarAnuncio = () => {
+        setAnuncioForm(ANUNCIO_VACIO)
+        setErrorAnuncio('')
     }
 
     const guardar = async (e) => {
@@ -112,6 +167,7 @@ const Administracion = () => {
                     titulo: form.titulo,
                     texto: form.texto,
                     imagen: form.imagen,
+                    portada: form.portada,
                 })
             } else {
                 await Api.post('/noticias', {
@@ -119,6 +175,7 @@ const Administracion = () => {
                     titulo: form.titulo,
                     texto: form.texto,
                     imagen: form.imagen,
+                    portada: form.portada,
                 })
             }
             cancelar()
@@ -148,10 +205,6 @@ const Administracion = () => {
             enlace: a.enlace || '',
             activo: Boolean(a.activo),
         })
-    }
-
-    const cancelarAnuncio = () => {
-        setAnuncioForm(ANUNCIO_VACIO)
     }
 
     const guardarAnuncio = async (e) => {
@@ -241,15 +294,36 @@ const Administracion = () => {
                                 onChange={(e) => setForm({ ...form, texto: e.target.value })}
                             />
                         </div>
+                        <div className="form-field checkbox-field">
+                            <label htmlFor="admin-portada">
+                                <input
+                                    id="admin-portada"
+                                    type="checkbox"
+                                    checked={form.portada}
+                                    onChange={(e) =>
+                                        setForm({ ...form, portada: e.target.checked })
+                                    }
+                                />
+                                Noticia principal (portada)
+                            </label>
+                        </div>
                         <div className="form-field">
-                            <label htmlFor="admin-imagen">URL de la imagen:</label>
+                            <label htmlFor="admin-imagen">Imagen o video (desde tu equipo):</label>
                             <input
+                                key={form.id || 'nuevo'}
                                 id="admin-imagen"
-                                type="url"
-                                value={form.imagen}
-                                placeholder="https://… o /images/noticia-1.jpg"
-                                onChange={(e) => setForm({ ...form, imagen: e.target.value })}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+                                onChange={subirImagen}
                             />
+                            <PreviaMultimedia src={form.imagen} alt="Vista previa de la imagen" />
+                            {subiendoImagen && <p className="state">Subiendo archivo…</p>}
+                            {errorImagen && <p className="state error">{errorImagen}</p>}
+                            <p className="form-hint">
+                                El archivo se guarda en el servidor (carpeta uploads). Para vídeo usa
+                                MP4 (H.264) o WebM: si grabas con el móvil, evita formatos como HEVC
+                                porque no se reproducen en todos los navegadores.
+                            </p>
                         </div>
                         <div className="form-actions">
                             <button type="submit" className="btn">
@@ -273,7 +347,10 @@ const Administracion = () => {
                         noticias.map((n) => (
                             <div className="admin-item" key={n.id}>
                                 <div className="admin-item-info">
-                                    <h3>{n.titulo}</h3>
+                                    <h3>
+                                        {n.titulo}
+                                        {n.portada && <span className="portada-badge">Portada</span>}
+                                    </h3>
                                     <p>
                                         {NOMBRES_CATEGORIAS[n.categoria] || n.categoria} ·{' '}
                                         {formatearFecha(n.fecha)}
@@ -335,17 +412,25 @@ const Administracion = () => {
                             </select>
                         </div>
                         <div className="form-field">
-                            <label htmlFor="anuncio-contenido">URL de imagen o video:</label>
+                            <label htmlFor="anuncio-contenido">
+                                {anuncioForm.tipo === 'video'
+                                    ? 'Video (desde tu equipo):'
+                                    : 'Imagen (desde tu equipo):'}
+                            </label>
                             <input
+                                key={anuncioForm.id || anuncioForm.tipo}
                                 id="anuncio-contenido"
-                                type="url"
-                                required
-                                value={anuncioForm.contenido}
-                                placeholder="https://…"
-                                onChange={(e) =>
-                                    setAnuncioForm({ ...anuncioForm, contenido: e.target.value })
+                                type="file"
+                                accept={
+                                    anuncioForm.tipo === 'video'
+                                        ? 'video/mp4,video/webm'
+                                        : 'image/jpeg,image/png,image/webp,image/gif'
                                 }
+                                onChange={subirContenidoAnuncio}
                             />
+                            <PreviaMultimedia src={anuncioForm.contenido} alt={anuncioForm.empresa} />
+                            {subiendoAnuncio && <p className="state">Subiendo archivo…</p>}
+                            {errorAnuncio && <p className="state error">{errorAnuncio}</p>}
                         </div>
                         <div className="form-field">
                             <label htmlFor="anuncio-enlace">Enlace al comercio:</label>

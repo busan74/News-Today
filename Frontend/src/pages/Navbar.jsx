@@ -18,7 +18,7 @@ const Navbar = () => {
         { to: '/sociedad', label: 'Sociedad' },
         { to: '/sucesos', label: 'Sucesos' },
         { to: '/tiempo', label: 'Tiempo' },
-        { to: '/empleo', label: 'Empleo' },
+        { to: '/tablon', label: 'Tablón' },
     ]
 
     const handleSearch = (e) => {

@@ -1,4 +1,5 @@
 import useAnuncios from '../hooks/useAnuncios'
+import { rutaCompleta } from '../utils/format'
 
 const Anuncio = ({ slot = 0 }) => {
     const { anuncios } = useAnuncios()
@@ -10,14 +11,18 @@ const Anuncio = ({ slot = 0 }) => {
         anuncio.tipo === 'video' ? (
             <video
                 className="anuncio-video"
-                src={anuncio.contenido}
+                src={rutaCompleta(anuncio.contenido)}
                 autoPlay
                 muted
                 loop
                 playsInline
             />
         ) : (
-            <img className="anuncio-img" src={anuncio.contenido} alt={anuncio.empresa} />
+            <img
+                className="anuncio-img"
+                src={rutaCompleta(anuncio.contenido)}
+                alt={anuncio.empresa}
+            />
         )
 
     const interno = (

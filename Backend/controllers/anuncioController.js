@@ -21,13 +21,18 @@ const listarActivos = async (req, res) => {
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
   const ahora = AHORA()
+  const filtro = [
+    'and(fecha_inicio.is.null,fecha_fin.is.null)',
+    `and(fecha_inicio.lte.${ahora},fecha_fin.is.null)`,
+    `and(fecha_inicio.is.null,fecha_fin.gte.${ahora})`,
+    `and(fecha_inicio.lte.${ahora},fecha_fin.gte.${ahora})`,
+  ].join(',')
   const { data, error } = await supabase
     .from('anuncios')
     .select('*')
     .eq('activo', true)
     .eq('pueblo', pueblo)
-    .or(`fecha_inicio.is.null,fecha_inicio.lte.${ahora}`)
-    .or(`fecha_fin.is.null,fecha_fin.gte.${ahora}`)
+    .or(filtro)
     .order('created_at', { ascending: false })
   if (error) throw error
 

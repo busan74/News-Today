@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import { formatearFecha } from '../utils/format'
+import { formatearFecha, esVideo, rutaCompleta } from '../utils/format'
+import VideoConRespaldo from './VideoConRespaldo'
 
-const ArticleCard = ({ noticia, featured = false }) => {
+const ArticleCard = ({ noticia }) => {
     return (
-        <article className={featured ? 'article featured' : 'article'}>
+        <article className="article">
             {noticia.imagen && (
                 <Link
                     className="article-image"
@@ -11,13 +12,16 @@ const ArticleCard = ({ noticia, featured = false }) => {
                     tabIndex={-1}
                     aria-hidden="true"
                 >
-                    <img src={noticia.imagen} alt="" loading="lazy" />
+                    {esVideo(noticia.imagen) ? (
+                        <VideoConRespaldo src={rutaCompleta(noticia.imagen)} muted loop playsInline />
+                    ) : (
+                        <img src={rutaCompleta(noticia.imagen)} alt="" loading="lazy" />
+                    )}
                 </Link>
             )}
             <h3>
                 <Link to={`/noticia/${noticia.id}`}>{noticia.titulo}</Link>
             </h3>
-            <p>{noticia.texto}</p>
             {noticia.fecha && (
                 <time className="article-date">{formatearFecha(noticia.fecha)}</time>
             )}
