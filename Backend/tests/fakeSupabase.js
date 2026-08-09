@@ -82,7 +82,7 @@ const DEFAULTS = {
   noticias: { imagen: '', fecha: null, portada: false },
   categorias: {},
   profiles: { role: 'editor' },
-  anuncios: { tipo: 'imagen', enlace: '', activo: false, posicion: 0, fecha_inicio: null, fecha_fin: null, stripe_customer_id: '', stripe_subscription_id: '' },
+  anuncios: { tipo: 'imagen', enlace: '', activo: false, posicion: 0, pagina: '', fecha_inicio: null, fecha_fin: null, stripe_customer_id: '', stripe_subscription_id: '' },
 }
 
 class Builder {

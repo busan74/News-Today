@@ -39,7 +39,7 @@ const Busqueda = () => {
 
     return (
         <main id="main" className="home home--portada-ancha">
-            <PaginaConAnuncios>
+            <PaginaConAnuncios pagina="busqueda">
                 <h1 className="search-title">Buscar noticias</h1>
                 <form onSubmit={handleSubmit} className="search-form">
                     <input

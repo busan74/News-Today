@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { NOMBRES_CATEGORIAS } from '../utils/format'
+import { NOMBRES_CATEGORIAS, rutaDeCategoria } from '../utils/format'
 import { usePueblo } from '../hooks/usePueblo'
 
 const Footer = () => {
@@ -21,7 +21,7 @@ const Footer = () => {
                     <h4>Secciones</h4>
                     <nav className="footer-nav" aria-label="Secciones">
                         {Object.entries(NOMBRES_CATEGORIAS).map(([slug, nombre]) => (
-                            <Link key={slug} to={`/${slug}`}>
+                            <Link key={slug} to={rutaDeCategoria(slug)}>
                                 {nombre}
                             </Link>
                         ))}

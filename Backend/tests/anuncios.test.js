@@ -11,38 +11,44 @@ const registrarAdmin = async () => {
 }
 
 describe('Anuncios', () => {
-  it('solo devuelve los anuncios activos', async () => {
+  it('solo devuelve los anuncios activos de la página pedida', async () => {
     const token = await registrarAdmin()
 
     await request(app)
       .post('/api/anuncios')
       .set('Authorization', `Bearer ${token}`)
-      .send({ empresa: 'Activo', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true })
+      .send({ empresa: 'Activo', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true, pagina: 'portada', posicion: 2 })
     await request(app)
       .post('/api/anuncios')
       .set('Authorization', `Bearer ${token}`)
-      .send({ empresa: 'Inactivo', tipo: 'imagen', contenido: 'https://img.example/b.png' })
+      .send({ empresa: 'Inactivo', tipo: 'imagen', contenido: 'https://img.example/b.png', pagina: 'portada' })
+    await request(app)
+      .post('/api/anuncios')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ empresa: 'De otra página', tipo: 'imagen', contenido: 'https://img.example/c.png', activo: true, pagina: 'deportes', posicion: 1 })
 
-    const res = await request(app).get('/api/anuncios')
+    const res = await request(app).get('/api/anuncios?pagina=portada')
     expect(res.status).toBe(200)
     expect(res.body.data).toHaveLength(1)
     expect(res.body.data[0].empresa).toBe('Activo')
     expect(res.body.data[0].tipo).toBe('imagen')
-    expect(res.body.data[0].posicion).toBe(1)
+    expect(res.body.data[0].posicion).toBe(2)
+    expect(res.body.data[0].pagina).toBe('portada')
   })
 
-  it('asigna y actualiza la posicion de cada anuncio', async () => {
+  it('asigna y actualiza pagina y posicion de cada anuncio', async () => {
     const token = await registrarAdmin()
 
     await request(app)
       .post('/api/anuncios')
       .set('Authorization', `Bearer ${token}`)
-      .send({ empresa: 'A', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true, posicion: 2 })
+      .send({ empresa: 'A', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true, pagina: 'portada', posicion: 2 })
     const creado = await request(app)
       .post('/api/anuncios')
       .set('Authorization', `Bearer ${token}`)
-      .send({ empresa: 'B', tipo: 'imagen', contenido: 'https://img.example/b.png', activo: true, posicion: 7 })
+      .send({ empresa: 'B', tipo: 'imagen', contenido: 'https://img.example/b.png', activo: true, pagina: 'cultura', posicion: 7 })
     expect(creado.body.data.posicion).toBe(7)
+    expect(creado.body.data.pagina).toBe('cultura')
 
     const upd = await request(app)
       .put(`/api/anuncios/${creado.body.data.id}`)
@@ -51,9 +57,9 @@ describe('Anuncios', () => {
     expect(upd.status).toBe(200)
     expect(upd.body.data.posicion).toBe(3)
 
-    const res = await request(app).get('/api/anuncios')
+    const res = await request(app).get('/api/anuncios?pagina=cultura')
     const orden = res.body.data.map((a) => a.posicion)
-    expect(orden).toEqual([2, 3])
+    expect(orden).toEqual([3])
   })
 
   it('el admin puede crear un anuncio de video', async () => {
@@ -68,12 +74,14 @@ describe('Anuncios', () => {
         contenido: 'https://cdn.example/anuncio.mp4',
         enlace: 'https://cafeteria.example.com',
         activo: true,
+        pagina: 'tablon',
       })
 
     expect(res.status).toBe(201)
     expect(res.body.data.empresa).toBe('Cafetería El Rincón')
     expect(res.body.data.enlace).toBe('https://cafeteria.example.com')
     expect(res.body.data.activo).toBe(true)
+    expect(res.body.data.pagina).toBe('tablon')
   })
 
   it('valida empresa, tipo y contenido', async () => {
@@ -110,7 +118,7 @@ describe('Anuncios', () => {
     expect(del.status).toBe(200)
     expect(del.body.data.id).toBe(id)
 
-    const res = await request(app).get('/api/anuncios')
+    const res = await request(app).get('/api/anuncios?pagina=portada')
     expect(res.body.data).toHaveLength(0)
   })
 
@@ -121,13 +129,13 @@ describe('Anuncios', () => {
     await request(app)
       .post('/api/anuncios')
       .set('Authorization', `Bearer ${token}`)
-      .send({ empresa: 'Activo hoy', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true })
+      .send({ empresa: 'Activo hoy', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true, pagina: 'portada' })
     await request(app)
       .post('/api/anuncios')
       .set('Authorization', `Bearer ${token}`)
-      .send({ empresa: 'Futuro', tipo: 'imagen', contenido: 'https://img.example/f.png', activo: true, fecha_inicio: en(5) })
+      .send({ empresa: 'Futuro', tipo: 'imagen', contenido: 'https://img.example/f.png', activo: true, pagina: 'portada', fecha_inicio: en(5) })
 
-    const res = await request(app).get('/api/anuncios')
+    const res = await request(app).get('/api/anuncios?pagina=portada')
     expect(res.status).toBe(200)
     const empresas = res.body.data.map((a) => a.empresa)
     expect(empresas).toContain('Activo hoy')

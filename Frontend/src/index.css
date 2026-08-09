@@ -1133,6 +1133,17 @@ textarea:focus-visible {
     grid-column: span 3;
 }
 
+.parrilla-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 480px;
+}
+
+.parrilla-selector select {
+    flex: 1;
+}
+
 .parrilla-sin-asignar {
     margin-top: 18px;
     padding: 14px;

@@ -22,10 +22,40 @@ export const formatearFecha = (fecha) => {
 export const NOMBRES_CATEGORIAS = {
     actualidad: 'Actualidad',
     deportes: 'Deportes',
-    pasatiempos: 'Pasatiempos',
+    cultura: 'Cultura',
     politica: 'Política',
     sociedad: 'Sociedad',
     sucesos: 'Sucesos',
     tiempo: 'Tiempo',
     empleo: 'Tablón',
 }
+
+export const PAGINAS = {
+    portada: 'Portada',
+    actualidad: 'Actualidad',
+    deportes: 'Deportes',
+    cultura: 'Cultura',
+    politica: 'Política',
+    sociedad: 'Sociedad',
+    sucesos: 'Sucesos',
+    tiempo: 'Tiempo',
+    tablon: 'Tablón',
+    busqueda: 'Búsqueda',
+    login: 'Iniciar sesión',
+    administracion: 'Administración',
+}
+
+export const PAGINA_POR_CATEGORIA = {
+    actualidad: 'actualidad',
+    deportes: 'deportes',
+    cultura: 'cultura',
+    politica: 'politica',
+    sociedad: 'sociedad',
+    sucesos: 'sucesos',
+    tiempo: 'tiempo',
+    empleo: 'tablon',
+}
+
+export const categoriaAPagina = (categoria) => PAGINA_POR_CATEGORIA[categoria] || 'portada'
+
+export const rutaDeCategoria = (slug) => (slug === 'empleo' ? '/tablon' : `/${slug}`)

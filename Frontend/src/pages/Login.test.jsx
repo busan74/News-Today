@@ -8,6 +8,7 @@ const { loginMock } = vi.hoisted(() => ({ loginMock: vi.fn() }))
 
 vi.mock('../services/api', () => ({
     Api: { post: vi.fn() },
+    getAnuncios: vi.fn().mockResolvedValue({ data: [] }),
 }))
 
 vi.mock('../hooks/useAuth', () => ({

@@ -1,24 +1,32 @@
 import { useEffect, useState } from 'react'
 import { getAnuncios } from '../services/api'
 
-let cache = null
+const cache = new Map()
 
-const cargarAnuncios = () => {
-    if (!cache) {
-        cache = getAnuncios()
-            .then((res) => res.data || [])
-            .catch(() => [])
+const cargarAnuncios = (pagina) => {
+    if (!cache.has(pagina)) {
+        cache.set(
+            pagina,
+            getAnuncios(pagina)
+                .then((res) => res.data || [])
+                .catch(() => [])
+        )
     }
-    return cache
+    return cache.get(pagina)
 }
 
-const useAnuncios = () => {
+export const invalidarCacheAnuncios = () => {
+    cache.clear()
+}
+
+const useAnuncios = (pagina = 'portada') => {
     const [anuncios, setAnuncios] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         let cancel = false
-        cargarAnuncios().then((data) => {
+        setLoading(true)
+        cargarAnuncios(pagina).then((data) => {
             if (!cancel) {
                 setAnuncios(data)
                 setLoading(false)
@@ -27,7 +35,7 @@ const useAnuncios = () => {
         return () => {
             cancel = true
         }
-    }, [])
+    }, [pagina])
 
     return { anuncios, loading }
 }

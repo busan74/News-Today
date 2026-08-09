@@ -5,7 +5,7 @@ import { useNoticias } from '../hooks/useNoticias'
 import ArticleCard from '../Components/ArticleCard'
 import PaginaConAnuncios from '../Components/PaginaConAnuncios'
 import VideoConRespaldo from '../Components/VideoConRespaldo'
-import { formatearFecha, NOMBRES_CATEGORIAS, esVideo, rutaCompleta } from '../utils/format'
+import { formatearFecha, NOMBRES_CATEGORIAS, esVideo, rutaCompleta, categoriaAPagina, rutaDeCategoria } from '../utils/format'
 import { usePageMeta } from '../hooks/usePageMeta'
 
 const nombreCategoria = (slug) => NOMBRES_CATEGORIAS[slug] || slug
@@ -64,10 +64,12 @@ const NoticiaDetalle = () => {
         .filter((n) => n.id !== noticia.id)
         .slice(0, 3)
 
+    const pagina = categoriaAPagina(noticia.categoria)
+
     return (
         <main id="main" className="home home--portada-ancha">
-            <PaginaConAnuncios>
-                <Link className="back-link" to={`/${noticia.categoria}`}>
+            <PaginaConAnuncios pagina={pagina}>
+                <Link className="back-link" to={rutaDeCategoria(noticia.categoria)}>
                     ← Volver a {nombreCategoria(noticia.categoria)}
                 </Link>
                 <article className="detail-article">

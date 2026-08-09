@@ -13,7 +13,7 @@ const Navbar = () => {
         { to: '/', label: 'Inicio' },
         { to: '/actualidad', label: 'Actualidad' },
         { to: '/deportes', label: 'Deportes' },
-        { to: '/pasatiempos', label: 'Pasatiempos' },
+        { to: '/cultura', label: 'Cultura' },
         { to: '/politica', label: 'Política' },
         { to: '/sociedad', label: 'Sociedad' },
         { to: '/sucesos', label: 'Sucesos' },

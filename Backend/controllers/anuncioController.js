@@ -9,6 +9,7 @@ const serializarAnuncio = (a) => ({
   enlace: a.enlace || '',
   activo: a.activo,
   posicion: Number(a.posicion) || 0,
+  pagina: a.pagina || '',
   fechaInicio: a.fecha_inicio || null,
   fechaFin: a.fecha_fin || null,
   stripeCustomerId: a.stripe_customer_id || '',
@@ -20,6 +21,7 @@ const AHORA = () => new Date().toISOString()
 
 const listarActivos = async (req, res) => {
   const pueblo = detectarPueblo(req)
+  const pagina = req.query.pagina || 'portada'
   const supabase = getSupabase()
   const ahora = AHORA()
   const filtro = [
@@ -33,6 +35,7 @@ const listarActivos = async (req, res) => {
     .select('*')
     .eq('activo', true)
     .eq('pueblo', pueblo)
+    .eq('pagina', pagina)
     .or(filtro)
     .order('posicion', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
@@ -55,13 +58,13 @@ const listar = async (req, res) => {
 }
 
 const crear = async (req, res) => {
-  const { empresa, tipo = 'imagen', contenido, enlace = '', activo = false, posicion = 1, fecha_inicio = null, fecha_fin = null } = req.body
+  const { empresa, tipo = 'imagen', contenido, enlace = '', activo = false, posicion = 1, pagina = 'portada', fecha_inicio = null, fecha_fin = null } = req.body
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('anuncios')
-    .insert({ empresa, tipo, contenido, enlace, activo, posicion, fecha_inicio, fecha_fin, pueblo })
+    .insert({ empresa, tipo, contenido, enlace, activo, posicion, pagina, fecha_inicio, fecha_fin, pueblo })
     .select()
     .single()
   if (error) throw error
@@ -71,7 +74,7 @@ const crear = async (req, res) => {
 
 const actualizar = async (req, res) => {
   const { id } = req.params
-  const { empresa, tipo, contenido, enlace, activo, posicion, fecha_inicio, fecha_fin } = req.body
+  const { empresa, tipo, contenido, enlace, activo, posicion, pagina, fecha_inicio, fecha_fin } = req.body
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
@@ -82,6 +85,7 @@ const actualizar = async (req, res) => {
   if (enlace !== undefined) campos.enlace = enlace
   if (activo !== undefined) campos.activo = activo
   if (posicion !== undefined) campos.posicion = Number(posicion)
+  if (pagina !== undefined) campos.pagina = pagina
   if (fecha_inicio !== undefined) campos.fecha_inicio = fecha_inicio
   if (fecha_fin !== undefined) campos.fecha_fin = fecha_fin
 

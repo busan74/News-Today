@@ -58,6 +58,8 @@ export const getPortada = async () => {
     return Api.get('/noticias/portada')
 }
 
-export const getAnuncios = async () => {
-    return Api.get('/anuncios')
+export const getAnuncios = async (pagina = 'portada') => {
+    const params = new URLSearchParams()
+    if (pagina) params.set('pagina', pagina)
+    return Api.get(`/anuncios?${params.toString()}`)
 }

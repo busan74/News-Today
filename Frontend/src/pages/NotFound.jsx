@@ -7,7 +7,7 @@ const NotFound = () => {
 
     return (
         <main id="main" className="home home--portada-ancha">
-            <PaginaConAnuncios>
+            <PaginaConAnuncios pagina="portada">
                 <div className="page notfound-page">
                     <div className="form-card notfound">
                         <span className="notfound-code">404</span>

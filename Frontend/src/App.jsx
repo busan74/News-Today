@@ -10,7 +10,7 @@ import ProtectedRoute from './pages/ProtectedRoute'
 import Footer from './Components/Footer'
 import Actualidad from './Components/Actualidad'
 import Deportes from './Components/Deportes'
-import Pasatiempos from './Components/Pasatiempos'
+import Cultura from './Components/Cultura'
 import Politica from './Components/Politica'
 import Sociedad from './Components/Sociedad'
 import Sucesos from './Components/Sucesos'
@@ -18,11 +18,12 @@ import Tiempo from './Components/Tiempo'
 import Tablon from './Components/Tablon'
 import PaginaConAnuncios from './Components/PaginaConAnuncios'
 import { usePageMeta } from './hooks/usePageMeta'
+import { categoriaAPagina } from './utils/format'
 
 const CATEGORIAS_DESC = {
     actualidad: 'Últimas noticias de actualidad, minuto a minuto.',
     deportes: 'Resultados, crónicas y novedades del mundo del deporte.',
-    pasatiempos: 'Ideas para el tiempo libre: lectura, ocio y más.',
+    cultura: 'Agenda cultural, arte, exposiciones y más.',
     politica: 'Análisis y noticias del ámbito político.',
     sociedad: 'La actualidad social, cultural y comunitaria.',
     sucesos: 'Información y novedades sobre sucesos y seguridad.',
@@ -30,11 +31,11 @@ const CATEGORIAS_DESC = {
     empleo: 'Anuncios, avisos y novedades del municipio.',
 }
 
-const SectionPage = ({ title, description, children }) => {
+const SectionPage = ({ title, description, pagina, children }) => {
     usePageMeta({ title, description })
     return (
         <main id="main" className="home home--portada-ancha">
-            <PaginaConAnuncios>{children}</PaginaConAnuncios>
+            <PaginaConAnuncios pagina={pagina}>{children}</PaginaConAnuncios>
         </main>
     )
 }
@@ -42,7 +43,11 @@ const SectionPage = ({ title, description, children }) => {
 const Categoria = ({ slug, children }) => {
     const nombre = slug.charAt(0).toUpperCase() + slug.slice(1)
     return (
-        <SectionPage title={nombre} description={CATEGORIAS_DESC[slug]}>
+        <SectionPage
+            title={nombre}
+            description={CATEGORIAS_DESC[slug]}
+            pagina={categoriaAPagina(slug)}
+        >
             {children}
         </SectionPage>
     )
@@ -59,7 +64,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/actualidad" element={<Categoria slug="actualidad"><Actualidad /></Categoria>} />
                 <Route path="/deportes" element={<Categoria slug="deportes"><Deportes /></Categoria>} />
-                <Route path="/pasatiempos" element={<Categoria slug="pasatiempos"><Pasatiempos /></Categoria>} />
+                <Route path="/cultura" element={<Categoria slug="cultura"><Cultura /></Categoria>} />
                 <Route path="/politica" element={<Categoria slug="politica"><Politica /></Categoria>} />
                 <Route path="/sociedad" element={<Categoria slug="sociedad"><Sociedad /></Categoria>} />
                 <Route path="/sucesos" element={<Categoria slug="sucesos"><Sucesos /></Categoria>} />

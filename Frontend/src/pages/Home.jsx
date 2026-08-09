@@ -20,7 +20,7 @@ const Home = () => {
                     </p>
                 </section>
             </div>
-            <PaginaConAnuncios>
+            <PaginaConAnuncios pagina="portada">
                 <Portada />
             </PaginaConAnuncios>
         </main>

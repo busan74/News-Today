@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Api } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
-import { formatearFecha, NOMBRES_CATEGORIAS, rutaCompleta } from '../utils/format'
+import { formatearFecha, NOMBRES_CATEGORIAS, PAGINAS, rutaCompleta } from '../utils/format'
+import { invalidarCacheAnuncios } from '../hooks/useAnuncios'
 import { usePageMeta } from '../hooks/usePageMeta'
 import PreviaMultimedia from '../Components/PreviaMultimedia'
+import PaginaConAnuncios from '../Components/PaginaConAnuncios'
 
 const VACIO = { id: null, categoria: 'actualidad', titulo: '', texto: '', imagen: '', portada: false }
 
@@ -16,9 +18,13 @@ const ANUNCIO_VACIO = {
     enlace: '',
     activo: true,
     posicion: 1,
+    pagina: 'portada',
 }
 
 const POSICIONES_ANUNCIOS = [1, 2, 3, 4, 5, 6, 7, 8]
+
+const enParrillaDe = (a, pagina) => a.pagina === pagina && Number(a.posicion) >= 1 && Number(a.posicion) <= 8
+const sinAsignar = (a) => !a.pagina || Number(a.posicion) === 0
 
 const Administracion = () => {
     usePageMeta({ title: 'Administración' })
@@ -36,6 +42,7 @@ const Administracion = () => {
     const [errorAnuncio, setErrorAnuncio] = useState('')
     const [arrastradoId, setArrastradoId] = useState(null)
     const [slotSobre, setSlotSobre] = useState(null)
+    const [paginaSeleccionada, setPaginaSeleccionada] = useState('portada')
 
     const manejarError = useCallback(
         (err) => {
@@ -210,6 +217,7 @@ const Administracion = () => {
             enlace: a.enlace || '',
             activo: Boolean(a.activo),
             posicion: Number(a.posicion) || 1,
+            pagina: a.pagina || 'portada',
         })
     }
 
@@ -224,6 +232,7 @@ const Administracion = () => {
                 enlace: anuncioForm.enlace,
                 activo: anuncioForm.activo,
                 posicion: Number(anuncioForm.posicion) || 1,
+                pagina: anuncioForm.pagina || 'portada',
             }
             if (anuncioForm.id) {
                 await Api.put(`/anuncios/${anuncioForm.id}`, datos)
@@ -231,6 +240,7 @@ const Administracion = () => {
                 await Api.post('/anuncios', datos)
             }
             cancelarAnuncio()
+            invalidarCacheAnuncios()
             await cargarAnuncios()
         } catch (err) {
             manejarError(err)
@@ -248,7 +258,7 @@ const Administracion = () => {
         setSlotSobre(null)
     }
 
-    const soltarAnuncio = async (e, posicion) => {
+    const soltarAnuncio = async (e, posicion, pagina) => {
         e.preventDefault()
         const id = Number(e.dataTransfer.getData('text/plain')) || arrastradoId
         setArrastradoId(null)
@@ -257,37 +267,65 @@ const Administracion = () => {
 
         const origen = (anuncios || []).find((a) => a.id === id)
         if (!origen) return
-        const destino = (anuncios || []).find(
-            (a) => Number(a.posicion) === Number(posicion)
-        )
+        const pos = Number(posicion)
+        const p = pagina || paginaSeleccionada
 
         try {
-            if (destino && destino.id !== id) {
-                const posOrigen = Number(origen.posicion)
-                setAnuncios((lista) =>
-                    lista.map((a) =>
-                        a.id === id
-                            ? { ...a, posicion: Number(posicion) }
-                            : a.id === destino.id
-                                ? { ...a, posicion: posOrigen }
-                                : a
+            if (pos === 0) {
+                if (origen.pagina !== '' || Number(origen.posicion) !== 0) {
+                    setAnuncios((lista) =>
+                        lista.map((a) =>
+                            a.id === id ? { ...a, pagina: '', posicion: 0 } : a
+                        )
                     )
+                    await Api.put(`/anuncios/${id}`, { pagina: '', posicion: 0 })
+                }
+            } else {
+                const destino = (anuncios || []).find(
+                    (a) => a.pagina === p && Number(a.posicion) === pos
                 )
-                await Promise.all([
-                    Api.put(`/anuncios/${id}`, { posicion: Number(posicion) }),
-                    Api.put(`/anuncios/${destino.id}`, { posicion: posOrigen }),
-                ])
-            } else if (Number(origen.posicion) !== Number(posicion)) {
-                setAnuncios((lista) =>
-                    lista.map((a) =>
-                        a.id === id ? { ...a, posicion: Number(posicion) } : a
+                if (destino && destino.id !== id) {
+                    if (origen.pagina === p) {
+                        const posOrigen = Number(origen.posicion)
+                        setAnuncios((lista) =>
+                            lista.map((a) =>
+                                a.id === id
+                                    ? { ...a, posicion: pos }
+                                    : a.id === destino.id
+                                        ? { ...a, posicion: posOrigen }
+                                        : a
+                            )
+                        )
+                        await Promise.all([
+                            Api.put(`/anuncios/${id}`, { pagina: p, posicion: pos }),
+                            Api.put(`/anuncios/${destino.id}`, { pagina: p, posicion: posOrigen }),
+                        ])
+                    } else {
+                        setAnuncios((lista) =>
+                            lista.map((a) =>
+                                a.id === id
+                                    ? { ...a, pagina: p, posicion: pos }
+                                    : a.id === destino.id
+                                        ? { ...a, pagina: '', posicion: 0 }
+                                        : a
+                            )
+                        )
+                        await Promise.all([
+                            Api.put(`/anuncios/${id}`, { pagina: p, posicion: pos }),
+                            Api.put(`/anuncios/${destino.id}`, { pagina: '', posicion: 0 }),
+                        ])
+                    }
+                } else if (origen.pagina !== p || Number(origen.posicion) !== pos) {
+                    setAnuncios((lista) =>
+                        lista.map((a) => (a.id === id ? { ...a, pagina: p, posicion: pos } : a))
                     )
-                )
-                await Api.put(`/anuncios/${id}`, { posicion: Number(posicion) })
+                    await Api.put(`/anuncios/${id}`, { pagina: p, posicion: pos })
+                }
             }
         } catch (err) {
             manejarError(err)
         } finally {
+            invalidarCacheAnuncios()
             await cargarAnuncios()
         }
     }
@@ -297,6 +335,7 @@ const Administracion = () => {
         setError('')
         try {
             await Api.del(`/anuncios/${id}`)
+            invalidarCacheAnuncios()
             await cargarAnuncios()
         } catch (err) {
             manejarError(err)
@@ -309,14 +348,15 @@ const Administracion = () => {
     }
 
     return (
-        <main id="main" className="home">
-            <div className="admin-header">
-                <h1 className="search-title">Administración</h1>
-                <button type="button" className="btn-ghost" onClick={salir}>
-                    Cerrar sesión
-                </button>
-            </div>
-            {error && <p className="state error">{error}</p>}
+        <main id="main" className="home home--portada-ancha">
+            <PaginaConAnuncios pagina="administracion">
+                <div className="admin-header">
+                    <h1 className="search-title">Administración</h1>
+                    <button type="button" className="btn-ghost" onClick={salir}>
+                        Cerrar sesión
+                    </button>
+                </div>
+                {error && <p className="state error">{error}</p>}
             <div className="admin-layout">
                 <div className="form-card">
                     <h2 className="form-title">
@@ -507,6 +547,22 @@ const Administracion = () => {
                             />
                         </div>
                         <div className="form-field">
+                            <label htmlFor="anuncio-pagina">Página donde se muestra:</label>
+                            <select
+                                id="anuncio-pagina"
+                                value={anuncioForm.pagina}
+                                onChange={(e) =>
+                                    setAnuncioForm({ ...anuncioForm, pagina: e.target.value })
+                                }
+                            >
+                                {Object.entries(PAGINAS).map(([clave, nombre]) => (
+                                    <option key={clave} value={clave}>
+                                        {nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-field">
                             <label htmlFor="anuncio-posicion">Número de posición (1-8):</label>
                             <input
                                 id="anuncio-posicion"
@@ -525,7 +581,8 @@ const Administracion = () => {
                             <p className="form-hint">
                                 El anuncio 1-3 va en la columna izquierda (de arriba a abajo), el
                                 4-6 en la derecha y el 7-8 son los anuncios grandes al final de
-                                cada página.
+                                esa página. Cada página (portada, secciones, tablón, búsqueda,
+                                login y administración) tiene su propia parrilla.
                             </p>
                         </div>
                         <div className="form-field checkbox-field">
@@ -568,8 +625,9 @@ const Administracion = () => {
                                 <div className="admin-item-info">
                                     <h3>{a.empresa}</h3>
                                     <p>
-                                        {a.tipo} · {a.activo ? 'Activo' : 'Inactivo'} · Posición{' '}
-                                        {Number(a.posicion) || '—'}
+                                        {a.tipo} · {a.activo ? 'Activo' : 'Inactivo'} ·{' '}
+                                        {PAGINAS[a.pagina] || 'Sin asignar'}
+                                        {Number(a.posicion) > 0 ? ` · Anuncio ${a.posicion}` : ''}
                                     </p>
                                 </div>
                                 <div className="admin-actions">
@@ -597,16 +655,33 @@ const Administracion = () => {
             </div>
 
             <section className="section parrilla-section">
-                <h2 className="section-title">Parrilla de anuncios (posiciones 1-8)</h2>
+                <h2 className="section-title">Parrilla de anuncios de cada página</h2>
                 <p className="form-hint">
-                    Mantén pulsado el botón izquierdo del ratón sobre un anuncio y arrástralo a
-                    otra casilla (arriba, abajo, izquierda o derecha). Al soltarlo se guarda la
-                    nueva posición automáticamente.
+                    Elige una página y ordena sus 8 anuncios arrastrando con el botón izquierdo
+                    del ratón (arriba, abajo, izquierda o derecha). Al soltarlo se guarda solo.
+                    También puedes arrastrar un anuncio de "Sin asignar" a una casilla.
                 </p>
+                <div className="form-field parrilla-selector">
+                    <label htmlFor="parrilla-pagina">Mostrar la parrilla de:</label>
+                    <select
+                        id="parrilla-pagina"
+                        value={paginaSeleccionada}
+                        onChange={(e) => {
+                            setPaginaSeleccionada(e.target.value)
+                            setSlotSobre(null)
+                        }}
+                    >
+                        {Object.entries(PAGINAS).map(([clave, nombre]) => (
+                            <option key={clave} value={clave}>
+                                {nombre}
+                            </option>
+                        ))}
+                    </select>
+                </div>
                 <div className="parrilla-anuncios">
                     {POSICIONES_ANUNCIOS.map((pos) => {
                         const a = (anuncios || []).find(
-                            (x) => Number(x.posicion) === Number(pos)
+                            (x) => x.pagina === paginaSeleccionada && Number(x.posicion) === pos
                         )
                         return (
                             <div
@@ -624,7 +699,7 @@ const Administracion = () => {
                                         setSlotSobre((s) => (s === pos ? null : s))
                                     }
                                 }}
-                                onDrop={(e) => soltarAnuncio(e, pos)}
+                                onDrop={(e) => soltarAnuncio(e, pos, paginaSeleccionada)}
                             >
                                 <span className="casilla-anuncio-num">Anuncio {pos}</span>
                                 {a ? (
@@ -659,19 +734,19 @@ const Administracion = () => {
                         )
                     })}
                 </div>
-                {(anuncios || []).filter((a) => Number(a.posicion) === 0).length > 0 && (
+                {(anuncios || []).filter(sinAsignar).length > 0 && (
                     <div
                         className="parrilla-sin-asignar"
                         onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => soltarAnuncio(e, 0)}
+                        onDrop={(e) => soltarAnuncio(e, 0, '')}
                     >
                         <p className="form-hint parrilla-sin-asignar-titulo">
-                            Sin asignar (no se muestran): arrastra aquí un anuncio para
-                            desasignarlo.
+                            Sin asignar (no se muestran en ninguna página): arrastra aquí un
+                            anuncio para desasignarlo, o arrastra uno de esta lista a una casilla.
                         </p>
                         <div className="parrilla-sin-asignar-items">
                             {(anuncios || [])
-                                .filter((a) => Number(a.posicion) === 0)
+                                .filter(sinAsignar)
                                 .map((a) => (
                                     <div
                                         key={a.id}
@@ -689,6 +764,7 @@ const Administracion = () => {
                     </div>
                 )}
             </section>
+            </PaginaConAnuncios>
         </main>
     )
 }

@@ -1,8 +1,8 @@
 import useAnuncios from '../hooks/useAnuncios'
 import { rutaCompleta } from '../utils/format'
 
-const Anuncio = ({ posicion = 1 }) => {
-    const { anuncios } = useAnuncios()
+const Anuncio = ({ pagina = 'portada', posicion = 1 }) => {
+    const { anuncios } = useAnuncios(pagina)
 
     if (anuncios.length === 0) return null
     const anuncio = anuncios.find((a) => Number(a.posicion) === Number(posicion))
