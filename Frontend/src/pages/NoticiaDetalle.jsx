@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getNoticia } from '../services/api'
 import { useNoticias } from '../hooks/useNoticias'
 import ArticleCard from '../Components/ArticleCard'
-import Anuncio from '../Components/Anuncio'
+import PaginaConAnuncios from '../Components/PaginaConAnuncios'
 import VideoConRespaldo from '../Components/VideoConRespaldo'
 import { formatearFecha, NOMBRES_CATEGORIAS, esVideo, rutaCompleta } from '../utils/format'
 import { usePageMeta } from '../hooks/usePageMeta'
@@ -65,46 +65,47 @@ const NoticiaDetalle = () => {
         .slice(0, 3)
 
     return (
-        <main id="main" className="home">
-            <Link className="back-link" to={`/${noticia.categoria}`}>
-                ← Volver a {nombreCategoria(noticia.categoria)}
-            </Link>
-            <article className="detail-article">
-                <span className="detail-category">
-                    {nombreCategoria(noticia.categoria)}
-                </span>
-                {noticia.imagen &&
-                    (esVideo(noticia.imagen) ? (
-                        <VideoConRespaldo
-                            className="detail-image"
-                            src={rutaCompleta(noticia.imagen)}
-                            controls
-                            playsInline
-                        />
-                    ) : (
-                        <img
-                            className="detail-image"
-                            src={rutaCompleta(noticia.imagen)}
-                            alt={noticia.titulo}
-                        />
-                    ))}
-                <h1 className="detail-title">{noticia.titulo}</h1>
-                {noticia.fecha && (
-                    <time className="detail-date">{formatearFecha(noticia.fecha)}</time>
-                )}
-                <p className="detail-body">{noticia.texto}</p>
-            </article>
-            <Anuncio slot={0} />
-            {relacionadasCat.length > 0 && (
-                <section className="section">
-                    <h2 className="section-title">Relacionadas</h2>
-                    <div className="articles">
-                        {relacionadasCat.map((n) => (
-                            <ArticleCard key={n.id} noticia={n} />
+        <main id="main" className="home home--portada-ancha">
+            <PaginaConAnuncios>
+                <Link className="back-link" to={`/${noticia.categoria}`}>
+                    ← Volver a {nombreCategoria(noticia.categoria)}
+                </Link>
+                <article className="detail-article">
+                    <span className="detail-category">
+                        {nombreCategoria(noticia.categoria)}
+                    </span>
+                    {noticia.imagen &&
+                        (esVideo(noticia.imagen) ? (
+                            <VideoConRespaldo
+                                className="detail-image"
+                                src={rutaCompleta(noticia.imagen)}
+                                controls
+                                playsInline
+                            />
+                        ) : (
+                            <img
+                                className="detail-image"
+                                src={rutaCompleta(noticia.imagen)}
+                                alt={noticia.titulo}
+                            />
                         ))}
-                    </div>
-                </section>
-            )}
+                    <h1 className="detail-title">{noticia.titulo}</h1>
+                    {noticia.fecha && (
+                        <time className="detail-date">{formatearFecha(noticia.fecha)}</time>
+                    )}
+                    <p className="detail-body">{noticia.texto}</p>
+                </article>
+                {relacionadasCat.length > 0 && (
+                    <section className="section">
+                        <h2 className="section-title">Relacionadas</h2>
+                        <div className="articles">
+                            {relacionadasCat.map((n) => (
+                                <ArticleCard key={n.id} noticia={n} />
+                            ))}
+                        </div>
+                    </section>
+                )}
+            </PaginaConAnuncios>
         </main>
     )
 }

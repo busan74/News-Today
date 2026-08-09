@@ -16,6 +16,7 @@ import Sociedad from './Components/Sociedad'
 import Sucesos from './Components/Sucesos'
 import Tiempo from './Components/Tiempo'
 import Tablon from './Components/Tablon'
+import PaginaConAnuncios from './Components/PaginaConAnuncios'
 import { usePageMeta } from './hooks/usePageMeta'
 
 const CATEGORIAS_DESC = {
@@ -32,8 +33,8 @@ const CATEGORIAS_DESC = {
 const SectionPage = ({ title, description, children }) => {
     usePageMeta({ title, description })
     return (
-        <main id="main" className="home">
-            {children}
+        <main id="main" className="home home--portada-ancha">
+            <PaginaConAnuncios>{children}</PaginaConAnuncios>
         </main>
     )
 }

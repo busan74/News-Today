@@ -28,6 +28,32 @@ describe('Anuncios', () => {
     expect(res.body.data).toHaveLength(1)
     expect(res.body.data[0].empresa).toBe('Activo')
     expect(res.body.data[0].tipo).toBe('imagen')
+    expect(res.body.data[0].posicion).toBe(1)
+  })
+
+  it('asigna y actualiza la posicion de cada anuncio', async () => {
+    const token = await registrarAdmin()
+
+    await request(app)
+      .post('/api/anuncios')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ empresa: 'A', tipo: 'imagen', contenido: 'https://img.example/a.png', activo: true, posicion: 2 })
+    const creado = await request(app)
+      .post('/api/anuncios')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ empresa: 'B', tipo: 'imagen', contenido: 'https://img.example/b.png', activo: true, posicion: 7 })
+    expect(creado.body.data.posicion).toBe(7)
+
+    const upd = await request(app)
+      .put(`/api/anuncios/${creado.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ posicion: 3 })
+    expect(upd.status).toBe(200)
+    expect(upd.body.data.posicion).toBe(3)
+
+    const res = await request(app).get('/api/anuncios')
+    const orden = res.body.data.map((a) => a.posicion)
+    expect(orden).toEqual([2, 3])
   })
 
   it('el admin puede crear un anuncio de video', async () => {

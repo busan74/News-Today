@@ -1,11 +1,12 @@
 import useAnuncios from '../hooks/useAnuncios'
 import { rutaCompleta } from '../utils/format'
 
-const Anuncio = ({ slot = 0 }) => {
+const Anuncio = ({ posicion = 1 }) => {
     const { anuncios } = useAnuncios()
 
     if (anuncios.length === 0) return null
-    const anuncio = anuncios[slot % anuncios.length]
+    const anuncio = anuncios.find((a) => Number(a.posicion) === Number(posicion))
+    if (!anuncio) return null
 
     const contenido =
         anuncio.tipo === 'video' ? (
@@ -28,7 +29,7 @@ const Anuncio = ({ slot = 0 }) => {
     const interno = (
         <>
             {contenido}
-            <span className="anuncio-label">Publicidad</span>
+            <span className="anuncio-label">Anuncio {posicion}</span>
         </>
     )
 

@@ -1,5 +1,5 @@
 import Portada from '../Components/Portada'
-import Anuncio from '../Components/Anuncio'
+import PaginaConAnuncios from '../Components/PaginaConAnuncios'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { usePueblo } from '../hooks/usePueblo'
 
@@ -20,29 +20,9 @@ const Home = () => {
                     </p>
                 </section>
             </div>
-            <div className="portada-fila">
-                <aside className="portada-lateral" aria-label="Publicidad">
-                    <div className="portada-lateral-inner">
-                        <Anuncio slot={0} />
-                        <Anuncio slot={1} />
-                        <Anuncio slot={2} />
-                    </div>
-                </aside>
+            <PaginaConAnuncios>
                 <Portada />
-                <aside className="portada-lateral" aria-label="Publicidad">
-                    <div className="portada-lateral-inner">
-                        <Anuncio slot={3} />
-                        <Anuncio slot={4} />
-                        <Anuncio slot={5} />
-                    </div>
-                </aside>
-            </div>
-            <div className="home-interior">
-                <div className="anuncios-grandes">
-                    <Anuncio slot={6} />
-                    <Anuncio slot={7} />
-                </div>
-            </div>
+            </PaginaConAnuncios>
         </main>
     )
 }

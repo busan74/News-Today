@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Api } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
-import { formatearFecha, NOMBRES_CATEGORIAS } from '../utils/format'
+import { formatearFecha, NOMBRES_CATEGORIAS, rutaCompleta } from '../utils/format'
 import { usePageMeta } from '../hooks/usePageMeta'
 import PreviaMultimedia from '../Components/PreviaMultimedia'
 
@@ -15,7 +15,10 @@ const ANUNCIO_VACIO = {
     contenido: '',
     enlace: '',
     activo: true,
+    posicion: 1,
 }
+
+const POSICIONES_ANUNCIOS = [1, 2, 3, 4, 5, 6, 7, 8]
 
 const Administracion = () => {
     usePageMeta({ title: 'Administración' })
@@ -31,6 +34,8 @@ const Administracion = () => {
     const [errorImagen, setErrorImagen] = useState('')
     const [subiendoAnuncio, setSubiendoAnuncio] = useState(false)
     const [errorAnuncio, setErrorAnuncio] = useState('')
+    const [arrastradoId, setArrastradoId] = useState(null)
+    const [slotSobre, setSlotSobre] = useState(null)
 
     const manejarError = useCallback(
         (err) => {
@@ -204,6 +209,7 @@ const Administracion = () => {
             contenido: a.contenido,
             enlace: a.enlace || '',
             activo: Boolean(a.activo),
+            posicion: Number(a.posicion) || 1,
         })
     }
 
@@ -217,6 +223,7 @@ const Administracion = () => {
                 contenido: anuncioForm.contenido,
                 enlace: anuncioForm.enlace,
                 activo: anuncioForm.activo,
+                posicion: Number(anuncioForm.posicion) || 1,
             }
             if (anuncioForm.id) {
                 await Api.put(`/anuncios/${anuncioForm.id}`, datos)
@@ -227,6 +234,61 @@ const Administracion = () => {
             await cargarAnuncios()
         } catch (err) {
             manejarError(err)
+        }
+    }
+
+    const inicioArrastre = (e, id) => {
+        e.dataTransfer.setData('text/plain', String(id))
+        e.dataTransfer.effectAllowed = 'move'
+        setArrastradoId(id)
+    }
+
+    const finArrastre = () => {
+        setArrastradoId(null)
+        setSlotSobre(null)
+    }
+
+    const soltarAnuncio = async (e, posicion) => {
+        e.preventDefault()
+        const id = Number(e.dataTransfer.getData('text/plain')) || arrastradoId
+        setArrastradoId(null)
+        setSlotSobre(null)
+        if (!id) return
+
+        const origen = (anuncios || []).find((a) => a.id === id)
+        if (!origen) return
+        const destino = (anuncios || []).find(
+            (a) => Number(a.posicion) === Number(posicion)
+        )
+
+        try {
+            if (destino && destino.id !== id) {
+                const posOrigen = Number(origen.posicion)
+                setAnuncios((lista) =>
+                    lista.map((a) =>
+                        a.id === id
+                            ? { ...a, posicion: Number(posicion) }
+                            : a.id === destino.id
+                                ? { ...a, posicion: posOrigen }
+                                : a
+                    )
+                )
+                await Promise.all([
+                    Api.put(`/anuncios/${id}`, { posicion: Number(posicion) }),
+                    Api.put(`/anuncios/${destino.id}`, { posicion: posOrigen }),
+                ])
+            } else if (Number(origen.posicion) !== Number(posicion)) {
+                setAnuncios((lista) =>
+                    lista.map((a) =>
+                        a.id === id ? { ...a, posicion: Number(posicion) } : a
+                    )
+                )
+                await Api.put(`/anuncios/${id}`, { posicion: Number(posicion) })
+            }
+        } catch (err) {
+            manejarError(err)
+        } finally {
+            await cargarAnuncios()
         }
     }
 
@@ -444,6 +506,28 @@ const Administracion = () => {
                                 }
                             />
                         </div>
+                        <div className="form-field">
+                            <label htmlFor="anuncio-posicion">Número de posición (1-8):</label>
+                            <input
+                                id="anuncio-posicion"
+                                type="number"
+                                min="1"
+                                max="8"
+                                required
+                                value={anuncioForm.posicion}
+                                onChange={(e) =>
+                                    setAnuncioForm({
+                                        ...anuncioForm,
+                                        posicion: Number(e.target.value),
+                                    })
+                                }
+                            />
+                            <p className="form-hint">
+                                El anuncio 1-3 va en la columna izquierda (de arriba a abajo), el
+                                4-6 en la derecha y el 7-8 son los anuncios grandes al final de
+                                cada página.
+                            </p>
+                        </div>
                         <div className="form-field checkbox-field">
                             <label htmlFor="anuncio-activo">
                                 <input
@@ -484,7 +568,8 @@ const Administracion = () => {
                                 <div className="admin-item-info">
                                     <h3>{a.empresa}</h3>
                                     <p>
-                                        {a.tipo} · {a.activo ? 'Activo' : 'Inactivo'}
+                                        {a.tipo} · {a.activo ? 'Activo' : 'Inactivo'} · Posición{' '}
+                                        {Number(a.posicion) || '—'}
                                     </p>
                                 </div>
                                 <div className="admin-actions">
@@ -510,6 +595,100 @@ const Administracion = () => {
                     )}
                 </section>
             </div>
+
+            <section className="section parrilla-section">
+                <h2 className="section-title">Parrilla de anuncios (posiciones 1-8)</h2>
+                <p className="form-hint">
+                    Mantén pulsado el botón izquierdo del ratón sobre un anuncio y arrástralo a
+                    otra casilla (arriba, abajo, izquierda o derecha). Al soltarlo se guarda la
+                    nueva posición automáticamente.
+                </p>
+                <div className="parrilla-anuncios">
+                    {POSICIONES_ANUNCIOS.map((pos) => {
+                        const a = (anuncios || []).find(
+                            (x) => Number(x.posicion) === Number(pos)
+                        )
+                        return (
+                            <div
+                                key={pos}
+                                className={`casilla-anuncio ${
+                                    a ? 'casilla-anuncio--llena' : 'casilla-anuncio--vacia'
+                                } ${slotSobre === pos ? 'casilla-anuncio--target' : ''}`}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDragEnter={(e) => {
+                                    e.preventDefault()
+                                    setSlotSobre(pos)
+                                }}
+                                onDragLeave={(e) => {
+                                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                                        setSlotSobre((s) => (s === pos ? null : s))
+                                    }
+                                }}
+                                onDrop={(e) => soltarAnuncio(e, pos)}
+                            >
+                                <span className="casilla-anuncio-num">Anuncio {pos}</span>
+                                {a ? (
+                                    <div
+                                        className={`contenido-arrastrable ${
+                                            arrastradoId === a.id ? 'anuncio-arrastrado' : ''
+                                        }`}
+                                        draggable
+                                        onDragStart={(e) => inicioArrastre(e, a.id)}
+                                        onDragEnd={finArrastre}
+                                    >
+                                        {a.tipo === 'video' ? (
+                                            <video
+                                                className="casilla-anuncio-img"
+                                                src={rutaCompleta(a.contenido)}
+                                                muted
+                                                playsInline
+                                            />
+                                        ) : (
+                                            <img
+                                                className="casilla-anuncio-img"
+                                                src={rutaCompleta(a.contenido)}
+                                                alt={a.empresa}
+                                            />
+                                        )}
+                                        <span className="casilla-anuncio-nombre">{a.empresa}</span>
+                                    </div>
+                                ) : (
+                                    <span>Sin anuncio</span>
+                                )}
+                            </div>
+                        )
+                    })}
+                </div>
+                {(anuncios || []).filter((a) => Number(a.posicion) === 0).length > 0 && (
+                    <div
+                        className="parrilla-sin-asignar"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => soltarAnuncio(e, 0)}
+                    >
+                        <p className="form-hint parrilla-sin-asignar-titulo">
+                            Sin asignar (no se muestran): arrastra aquí un anuncio para
+                            desasignarlo.
+                        </p>
+                        <div className="parrilla-sin-asignar-items">
+                            {(anuncios || [])
+                                .filter((a) => Number(a.posicion) === 0)
+                                .map((a) => (
+                                    <div
+                                        key={a.id}
+                                        className={`casilla-sin-asignar ${
+                                            arrastradoId === a.id ? 'anuncio-arrastrado' : ''
+                                        }`}
+                                        draggable
+                                        onDragStart={(e) => inicioArrastre(e, a.id)}
+                                        onDragEnd={finArrastre}
+                                    >
+                                        {a.empresa}
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                )}
+            </section>
         </main>
     )
 }

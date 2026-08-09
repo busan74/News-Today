@@ -8,6 +8,7 @@ const serializarAnuncio = (a) => ({
   contenido: a.contenido,
   enlace: a.enlace || '',
   activo: a.activo,
+  posicion: Number(a.posicion) || 0,
   fechaInicio: a.fecha_inicio || null,
   fechaFin: a.fecha_fin || null,
   stripeCustomerId: a.stripe_customer_id || '',
@@ -33,6 +34,7 @@ const listarActivos = async (req, res) => {
     .eq('activo', true)
     .eq('pueblo', pueblo)
     .or(filtro)
+    .order('posicion', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
   if (error) throw error
 
@@ -53,13 +55,13 @@ const listar = async (req, res) => {
 }
 
 const crear = async (req, res) => {
-  const { empresa, tipo = 'imagen', contenido, enlace = '', activo = false, fecha_inicio = null, fecha_fin = null } = req.body
+  const { empresa, tipo = 'imagen', contenido, enlace = '', activo = false, posicion = 1, fecha_inicio = null, fecha_fin = null } = req.body
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
   const { data, error } = await supabase
     .from('anuncios')
-    .insert({ empresa, tipo, contenido, enlace, activo, fecha_inicio, fecha_fin, pueblo })
+    .insert({ empresa, tipo, contenido, enlace, activo, posicion, fecha_inicio, fecha_fin, pueblo })
     .select()
     .single()
   if (error) throw error
@@ -69,7 +71,7 @@ const crear = async (req, res) => {
 
 const actualizar = async (req, res) => {
   const { id } = req.params
-  const { empresa, tipo, contenido, enlace, activo, fecha_inicio, fecha_fin } = req.body
+  const { empresa, tipo, contenido, enlace, activo, posicion, fecha_inicio, fecha_fin } = req.body
   const pueblo = detectarPueblo(req)
   const supabase = getSupabase()
 
@@ -79,6 +81,7 @@ const actualizar = async (req, res) => {
   if (contenido !== undefined) campos.contenido = contenido
   if (enlace !== undefined) campos.enlace = enlace
   if (activo !== undefined) campos.activo = activo
+  if (posicion !== undefined) campos.posicion = Number(posicion)
   if (fecha_inicio !== undefined) campos.fecha_inicio = fecha_inicio
   if (fecha_fin !== undefined) campos.fecha_fin = fecha_fin
 

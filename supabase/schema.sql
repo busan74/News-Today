@@ -61,6 +61,8 @@ create table if not exists public.anuncios (
   contenido text not null,
   enlace text not null default '',
   activo boolean not null default false,
+  posicion integer not null default 0,
+  pueblo text not null default '',
   fecha_inicio timestamptz,
   fecha_fin timestamptz,
   stripe_customer_id text not null default '',
@@ -69,6 +71,14 @@ create table if not exists public.anuncios (
 );
 
 create index if not exists idx_anuncios_activo on public.anuncios (activo);
+
+-- Migración: posición de cada anuncio en la parrilla (1-3 izq., 4-6 der., 7-8 grandes)
+-- Idempotente: no falla si ya existe ni la elimina si hay datos.
+alter table public.anuncios
+  add column if not exists posicion integer not null default 0;
+
+alter table public.anuncios
+  add column if not exists pueblo text not null default '';
 
 -- ------------------------------------------------------------
 -- Row Level Security

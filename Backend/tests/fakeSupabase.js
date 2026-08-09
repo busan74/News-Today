@@ -82,14 +82,14 @@ const DEFAULTS = {
   noticias: { imagen: '', fecha: null, portada: false },
   categorias: {},
   profiles: { role: 'editor' },
-  anuncios: { tipo: 'imagen', enlace: '', activo: false, fecha_inicio: null, fecha_fin: null, stripe_customer_id: '', stripe_subscription_id: '' },
+  anuncios: { tipo: 'imagen', enlace: '', activo: false, posicion: 0, fecha_inicio: null, fecha_fin: null, stripe_customer_id: '', stripe_subscription_id: '' },
 }
 
 class Builder {
   constructor(tabla) {
     this.tabla = tabla
     this.filtros = []
-    this.orden = null
+    this.ordenes = []
     this.limite = null
     this.head = false
     this.modo = null
@@ -124,7 +124,7 @@ class Builder {
   }
 
   order(campo, { ascending = true } = {}) {
-    this.orden = { campo, ascending }
+    this.ordenes.push({ campo, ascending })
     return this
   }
 
@@ -182,11 +182,13 @@ class Builder {
     const { filas } = obtenerEstado().tablas[this.tabla]
     let resultado = aplicarFiltros(filas, this.filtros)
 
-    if (this.orden) {
-      const { campo, ascending } = this.orden
+    if (this.ordenes.length) {
       resultado = [...resultado].sort((a, b) => {
-        const cmp = a[campo] < b[campo] ? -1 : a[campo] > b[campo] ? 1 : 0
-        return ascending ? cmp : -cmp
+        for (const { campo, ascending } of this.ordenes) {
+          if (a[campo] < b[campo]) return ascending ? -1 : 1
+          if (a[campo] > b[campo]) return ascending ? 1 : -1
+        }
+        return 0
       })
     }
 
