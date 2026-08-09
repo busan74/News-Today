@@ -303,6 +303,8 @@ textarea:focus-visible {
 }
 
 .portada-title a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
     transition: color 0.2s ease;
 }
 
@@ -412,6 +414,8 @@ textarea:focus-visible {
 }
 
 .article h3 a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
     transition: color 0.2s ease;
 }
 
@@ -539,6 +543,8 @@ textarea:focus-visible {
     font-weight: 900;
     line-height: 1.2;
     letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .detail-date {
