@@ -11,6 +11,7 @@ const noticias = require('./routes/noticias')
 const categorias = require('./routes/categorias')
 const anuncios = require('./routes/anuncios')
 const uploads = require('./routes/uploads')
+const seo = require('./routes/seo')
 const { errorHandler, notFound } = require('./middleware/errores')
 
 const app = express()
@@ -78,6 +79,8 @@ app.use('/api/noticias', noticias)
 app.use('/api/categorias', categorias)
 app.use('/api/anuncios', anuncios)
 app.use('/api/upload', uploads)
+
+app.use(seo)
 
 app.use(notFound)
 app.use(errorHandler)

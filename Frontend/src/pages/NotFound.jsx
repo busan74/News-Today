@@ -3,7 +3,7 @@ import PaginaConAnuncios from '../Components/PaginaConAnuncios'
 import { usePageMeta } from '../hooks/usePageMeta'
 
 const NotFound = () => {
-    usePageMeta({ title: 'Página no encontrada' })
+    usePageMeta({ title: 'Página no encontrada', noindex: true })
 
     return (
         <main id="main" className="home home--portada-ancha">

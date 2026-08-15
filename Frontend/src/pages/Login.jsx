@@ -6,7 +6,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import PaginaConAnuncios from '../Components/PaginaConAnuncios'
 
 function Login() {
-    usePageMeta({ title: 'Iniciar sesión' })
+    usePageMeta({ title: 'Iniciar sesión', noindex: true })
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')

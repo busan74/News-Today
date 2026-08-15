@@ -27,7 +27,7 @@ const enParrillaDe = (a, pagina) => a.pagina === pagina && Number(a.posicion) >=
 const sinAsignar = (a) => !a.pagina || Number(a.posicion) === 0
 
 const Administracion = () => {
-    usePageMeta({ title: 'Administración' })
+    usePageMeta({ title: 'Administración', noindex: true })
     const { logout } = useAuth()
     const navigate = useNavigate()
     const [noticias, setNoticias] = useState(null)

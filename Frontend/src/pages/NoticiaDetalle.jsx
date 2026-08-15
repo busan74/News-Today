@@ -17,7 +17,17 @@ const NoticiaDetalle = () => {
     const [error, setError] = useState(null)
     const { noticias: relacionadas } = useNoticias(noticia?.categoria)
 
-    usePageMeta({ title: noticia?.titulo, description: noticia?.texto })
+    usePageMeta({
+        title: noticia?.titulo,
+        description: noticia?.texto,
+        image:
+            noticia?.imagen && !esVideo(noticia.imagen)
+                ? rutaCompleta(noticia.imagen)
+                : undefined,
+        type: 'article',
+        section: noticia?.categoria ? nombreCategoria(noticia.categoria) : undefined,
+        publishedTime: noticia?.fecha,
+    })
 
     useEffect(() => {
         let cancel = false

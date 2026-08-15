@@ -9,6 +9,7 @@ const Busqueda = () => {
     usePageMeta({
         title: 'Buscar noticias',
         description: 'Busca noticias por palabra clave y categoría.',
+        noindex: true,
     })
     const [searchParams, setSearchParams] = useSearchParams()
     const q = searchParams.get('q') || ''

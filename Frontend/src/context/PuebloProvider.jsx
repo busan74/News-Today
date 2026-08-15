@@ -25,6 +25,19 @@ const aplicarColores = (color, colorDark) => {
     if (meta) meta.setAttribute('content', color)
 }
 
+const aplicarFavicon = (logo, color) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="${color}"/><text x="24" y="31" font-family="Arial, sans-serif" font-size="22" font-weight="800" fill="#ffffff" text-anchor="middle">${logo}</text></svg>`
+    const href = `data:image/svg+xml,${encodeURIComponent(svg)}`
+    let link = document.querySelector('link[rel="icon"]')
+    if (!link) {
+        link = document.createElement('link')
+        link.setAttribute('rel', 'icon')
+        document.head.appendChild(link)
+    }
+    link.setAttribute('href', href)
+    link.setAttribute('type', 'image/svg+xml')
+}
+
 export const PuebloProvider = ({ children }) => {
     const [config, setConfig] = useState(DEFAULT_PUEBLO)
     const [pueblos, setPueblos] = useState([])
@@ -40,8 +53,12 @@ export const PuebloProvider = ({ children }) => {
                 setConfig(cfg)
                 setPueblos(res.pueblos || [])
                 aplicarColores(cfg.color, cfg.colorDark)
+                aplicarFavicon(cfg.logo, cfg.color)
             } catch {
-                if (activo) aplicarColores(DEFAULT_PUEBLO.color, DEFAULT_PUEBLO.colorDark)
+                if (activo) {
+                    aplicarColores(DEFAULT_PUEBLO.color, DEFAULT_PUEBLO.colorDark)
+                    aplicarFavicon(DEFAULT_PUEBLO.logo, DEFAULT_PUEBLO.color)
+                }
             } finally {
                 if (activo) setLoading(false)
             }
