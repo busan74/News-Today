@@ -12,6 +12,7 @@ const categorias = require('./routes/categorias')
 const anuncios = require('./routes/anuncios')
 const uploads = require('./routes/uploads')
 const seo = require('./routes/seo')
+const prerender = require('./routes/prerender')
 const { errorHandler, notFound } = require('./middleware/errores')
 
 const app = express()
@@ -54,6 +55,8 @@ app.use(express.json({ limit: '75mb' }))
 app.use(express.urlencoded({ extended: true, limit: '75mb' }))
 
 app.use('/uploads', express.static(UPLOAD_DIR))
+
+app.use(prerender)
 
 app.get('/', (req, res) => {
   res.json({
