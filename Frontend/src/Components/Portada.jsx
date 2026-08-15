@@ -29,7 +29,13 @@ const Portada = () => {
         }
     }, [])
 
-    if (loading || !portada) return null
+    if (loading) {
+        return <p className="state">Cargando portada…</p>
+    }
+
+    if (!portada) {
+        return <p className="state">Aún no hay noticias destacadas.</p>
+    }
 
     const conImagen = Boolean(portada.imagen)
 

@@ -22,7 +22,32 @@ describe('Auth', () => {
       expect(enBD.password).not.toBe('password123')
     })
 
-    it('crea usuarios posteriores como editor', async () => {
+    it('crea usuarios posteriores como editor (solo el administrador)', async () => {
+      await request(app).post('/api/auth/register').send({
+        username: 'admin',
+        email: 'admin@news-today.local',
+        password: 'password123',
+      })
+
+      const login = await request(app).post('/api/auth/login').send({
+        username: 'admin',
+        password: 'password123',
+      })
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .send({
+          username: 'editor1',
+          email: 'editor1@news-today.local',
+          password: 'password123',
+        })
+
+      expect(res.status).toBe(201)
+      expect(res.body.user.role).toBe('editor')
+    })
+
+    it('rechaza registros de desconocidos cuando ya existe el administrador', async () => {
       await request(app).post('/api/auth/register').send({
         username: 'admin',
         email: 'admin@news-today.local',
@@ -30,13 +55,13 @@ describe('Auth', () => {
       })
 
       const res = await request(app).post('/api/auth/register').send({
-        username: 'editor1',
-        email: 'editor1@news-today.local',
+        username: 'intruso',
+        email: 'intruso@example.com',
         password: 'password123',
       })
 
-      expect(res.status).toBe(201)
-      expect(res.body.user.role).toBe('editor')
+      expect(res.status).toBe(403)
+      expect(res.body.error).toMatch(/registro está cerrado/i)
     })
 
     it('rechaza entradas inválidas', async () => {
@@ -58,11 +83,19 @@ describe('Auth', () => {
         password: 'password123',
       })
 
-      const res = await request(app).post('/api/auth/register').send({
+      const login = await request(app).post('/api/auth/login').send({
         username: 'admin',
-        email: 'otro@news-today.local',
         password: 'password123',
       })
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .set('Authorization', `Bearer ${login.body.token}`)
+        .send({
+          username: 'admin',
+          email: 'otro@news-today.local',
+          password: 'password123',
+        })
 
       expect(res.status).toBe(409)
     })

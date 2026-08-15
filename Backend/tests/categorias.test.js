@@ -1,18 +1,34 @@
 import request from 'supertest'
 import app from '../app'
 
-const crearUsuario = async (username, email) => {
+const crearAdmin = async () => {
   const res = await request(app).post('/api/auth/register').send({
-    username,
-    email,
+    username: 'admin',
+    email: 'admin@news-today.local',
     password: 'password123',
   })
   return res.body.token
 }
 
+const crearEditor = async (username, email) => {
+  const loginAdmin = await request(app).post('/api/auth/login').send({
+    username: 'admin',
+    password: 'password123',
+  })
+  await request(app)
+    .post('/api/auth/register')
+    .set('Authorization', `Bearer ${loginAdmin.body.token}`)
+    .send({ username, email, password: 'password123' })
+  const loginEditor = await request(app).post('/api/auth/login').send({
+    username,
+    password: 'password123',
+  })
+  return loginEditor.body.token
+}
+
 describe('Categorías', () => {
   it('lista categorías', async () => {
-    const token = await crearUsuario('admin', 'admin@news-today.local')
+    const token = await crearAdmin()
     await request(app)
       .post('/api/categorias')
       .set('Authorization', `Bearer ${token}`)
@@ -24,8 +40,8 @@ describe('Categorías', () => {
   })
 
   it('permite crear solo a administradores', async () => {
-    const tokenAdmin = await crearUsuario('admin', 'admin@news-today.local')
-    const tokenEditor = await crearUsuario('editor1', 'editor1@news-today.local')
+    const tokenAdmin = await crearAdmin()
+    const tokenEditor = await crearEditor('editor1', 'editor1@news-today.local')
 
     const sinToken = await request(app)
       .post('/api/categorias')
@@ -46,7 +62,7 @@ describe('Categorías', () => {
   })
 
   it('rechaza slugs duplicados', async () => {
-    const token = await crearUsuario('admin', 'admin@news-today.local')
+    const token = await crearAdmin()
     await request(app)
       .post('/api/categorias')
       .set('Authorization', `Bearer ${token}`)
@@ -60,7 +76,7 @@ describe('Categorías', () => {
   })
 
   it('actualiza y elimina categorías', async () => {
-    const token = await crearUsuario('admin', 'admin@news-today.local')
+    const token = await crearAdmin()
     const creada = await request(app)
       .post('/api/categorias')
       .set('Authorization', `Bearer ${token}`)

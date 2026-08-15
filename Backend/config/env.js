@@ -27,6 +27,7 @@ if (esProduccion) {
   const obligatorias = [
     ['SUPABASE_URL', 'URL del proyecto Supabase'],
     ['SUPABASE_SECRET_KEY', 'clave secreta (server) del proyecto Supabase'],
+    ['ADMIN_PASS', 'contraseña del administrador (genera una segura, no uses la de ejemplo)'],
   ]
   for (const [clave, descripcion] of obligatorias) {
     if (!process.env[clave]) {
@@ -56,7 +57,7 @@ const config = {
   SUPABASE_JWKS_URL,
   ADMIN_USER,
   ADMIN_EMAIL,
-  ADMIN_PASS: process.env.ADMIN_PASS || 'password',
+  ADMIN_PASS: process.env.ADMIN_PASS || '',
   SSL_CERT_PATH: process.env.SSL_CERT_PATH || null,
   SSL_KEY_PATH: process.env.SSL_KEY_PATH || null,
   TRUST_PROXY: parseTrustProxy(process.env.TRUST_PROXY),

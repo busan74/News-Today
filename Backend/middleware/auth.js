@@ -14,48 +14,118 @@ const construirUsuario = (payload) => {
     id: payload.sub,
     email: payload.email || metadatos.email || '',
     username: metadatos.username || payload.email || '',
-    role: metadatos.role === 'admin' ? 'admin' : 'editor',
   }
 }
 
-const requireAuth = async (req, res, next) => {
+const leerToken = (req) => {
   const header = req.headers.authorization || ''
-  const token = header.startsWith('Bearer ') ? header.slice(7) : ''
+  return header.startsWith('Bearer ') ? header.slice(7) : ''
+}
+
+const verificarToken = async (token) => {
+  if (!jwks) throw new Error('JWKS no configurado')
+  const { payload } = await jwtVerify(token, jwks, {
+    audience: audiencia,
+    issuer: emisor || undefined,
+  })
+  return construirUsuario(payload)
+}
+
+const descifrarTest = (token) => {
+  const payload = JSON.parse(Buffer.from(token, 'base64').toString('utf8'))
+  return construirUsuario(payload)
+}
+
+const requireAuth = async (req, res, next) => {
+  const token = leerToken(req)
   if (!token) {
     return res.status(401).json({ success: false, error: 'No autorizado' })
   }
 
-  if (config.NODE_ENV === 'test') {
-    try {
-      const payload = JSON.parse(Buffer.from(token, 'base64').toString('utf8'))
-      req.user = construirUsuario(payload)
-      return next()
-    } catch {
-      return res.status(401).json({ success: false, error: 'No autorizado' })
-    }
-  }
-
-  if (!jwks) {
-    return res.status(401).json({ success: false, error: 'No autorizado' })
-  }
-
   try {
-    const { payload } = await jwtVerify(token, jwks, {
-      audience: audiencia,
-      issuer: emisor || undefined,
-    })
-    req.user = construirUsuario(payload)
+    req.user = config.NODE_ENV === 'test' ? descifrarTest(token) : await verificarToken(token)
     next()
   } catch {
     res.status(401).json({ success: false, error: 'No autorizado' })
   }
 }
 
-const requireAdmin = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ success: false, error: 'Acceso denegado' })
+// Autenticación opcional: rellena req.user solo si llega un token válido.
+// Nunca rechaza la petición (usado para el alta de usuarios).
+const leerUsuario = async (req, _res, next) => {
+  const token = leerToken(req)
+  if (!token) return next()
+
+  try {
+    req.user = config.NODE_ENV === 'test' ? descifrarTest(token) : await verificarToken(token)
+  } catch {
+    // Token inválido: se ignora y se continúa sin usuario.
   }
   next()
 }
 
-module.exports = { requireAuth, requireAdmin }
+const cargarPerfil = async (req) => {
+  const { getSupabase } = require('../config/supabase')
+  const { data: perfil, error } = await getSupabase()
+    .from('profiles')
+    .select('*')
+    .eq('id', req.user?.id)
+    .maybeSingle()
+  if (error) throw error
+  return perfil || null
+}
+
+// El rol se decide por la tabla profiles (fuente de verdad), nunca por claims del JWT.
+const requireAdmin = async (req, res, next) => {
+  try {
+    const perfil = await cargarPerfil(req)
+    if (perfil?.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' })
+    }
+    req.perfil = perfil
+    next()
+  } catch {
+    return res.status(500).json({ success: false, error: 'Error interno del servidor' })
+  }
+}
+
+// Un editor solo puede escribir en el pueblo al que pertenece.
+// El administrador global puede gestionar todos los pueblos.
+const verificarPueblo = async (req, res, next) => {
+  try {
+    const perfil = await cargarPerfil(req)
+    if (!perfil) {
+      return res.status(403).json({
+        success: false,
+        error: 'Tu cuenta no tiene un pueblo asignado. Contacta con el administrador.',
+      })
+    }
+    if (perfil.role === 'admin') {
+      req.perfil = perfil
+      return next()
+    }
+
+    const { detectarPueblo } = require('../config/pueblos')
+    const puebloPerfil = String(perfil.pueblo || '').toLowerCase()
+    const puebloPeticion = detectarPueblo(req)
+
+    if (!puebloPerfil) {
+      return res.status(403).json({
+        success: false,
+        error: 'Tu cuenta no tiene un pueblo asignado. Contacta con el administrador.',
+      })
+    }
+    if (puebloPerfil !== puebloPeticion) {
+      return res.status(403).json({
+        success: false,
+        error: 'No puedes modificar el contenido de otro pueblo.',
+      })
+    }
+    req.perfil = perfil
+    next()
+  } catch {
+    return res.status(500).json({ success: false, error: 'Error interno del servidor' })
+  }
+}
+
+module.exports = { requireAuth, requireAdmin, verificarPueblo, leerUsuario }

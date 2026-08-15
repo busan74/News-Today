@@ -1,4 +1,5 @@
 const { getSupabase, getClienteAuth } = require('../config/supabase')
+const { detectarPueblo, PUEBLOS } = require('../config/pueblos')
 
 const buscarPerfil = async (supabase, campo, valor) => {
   const { data, error } = await supabase.from('profiles').select('*').eq(campo, valor).maybeSingle()
@@ -27,13 +28,33 @@ const registrar = async (req, res) => {
   }
 
   const total = await contarPerfiles(supabase)
-  const role = total === 0 ? 'admin' : 'editor'
+  const esBootstrap = total === 0
+
+  // Solo se permite el alta en dos casos:
+  //  - bootstrap inicial (primer usuario de la instalación, se crea como admin);
+  //  - un administrador autenticado que crea editores.
+  let esAdmin = false
+  if (req.user?.id) {
+    const llamante = await buscarPerfil(supabase, 'id', req.user.id)
+    esAdmin = llamante?.role === 'admin'
+  }
+
+  if (!esBootstrap && !esAdmin) {
+    return res.status(403).json({
+      success: false,
+      error: 'El registro está cerrado. Contacta con el administrador para crear tu cuenta.',
+    })
+  }
+
+  const role = esBootstrap ? 'admin' : 'editor'
+  const puebloSolicitado = String(req.body.pueblo || '').trim().toLowerCase()
+  const pueblo = PUEBLOS[puebloSolicitado] ? puebloSolicitado : detectarPueblo(req)
 
   const { data: creado, error: errorAuth } = await supabase.auth.admin.createUser({
     email: correo,
     password,
     email_confirm: true,
-    user_metadata: { username: nombre, role },
+    user_metadata: { username: nombre, role, pueblo },
   })
   if (errorAuth) {
     return res.status(409).json({ success: false, error: 'El registro ya existe' })
@@ -41,7 +62,7 @@ const registrar = async (req, res) => {
 
   const { data: perfil, error: errorPerfil } = await supabase
     .from('profiles')
-    .insert({ id: creado.user.id, username: nombre, email: correo, role })
+    .insert({ id: creado.user.id, username: nombre, email: correo, role, pueblo })
     .select()
     .single()
   if (errorPerfil) {
@@ -58,7 +79,7 @@ const registrar = async (req, res) => {
   res.status(201).json({
     success: true,
     token: sesion.session.access_token,
-    user: { id: perfil.id, username: perfil.username, email: correo, role: perfil.role },
+    user: { id: perfil.id, username: perfil.username, email: correo, role: perfil.role, pueblo: perfil.pueblo },
   })
 }
 
@@ -85,7 +106,7 @@ const iniciarSesion = async (req, res) => {
   res.json({
     success: true,
     token: sesion.session.access_token,
-    user: { id: perfil.id, username: perfil.username, email: perfil.email, role: perfil.role },
+    user: { id: perfil.id, username: perfil.username, email: perfil.email, role: perfil.role, pueblo: perfil.pueblo },
   })
 }
 

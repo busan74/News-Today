@@ -46,3 +46,25 @@ create policy "pueblos lectura publica" on public.pueblos
 -- 5) Añadir 'pueblo' a las políticas de lectura existentes ya cubiertas por using(true).
 --    Las políticas de lectura ya permiten todo (using true), así que no hace falta cambiarlas.
 --    Los insert/update del backend usan la SUPABASE_SECRET_KEY (BYPASSRLS).
+
+-- 6) VINCULAR PERFILES A SU PUEBLO (seguridad multi-tenant)
+--    Cada editor/admin pertenece a un pueblo y solo puede escribir en él.
+--    El administrador global (rol 'admin') puede gestionar todos los pueblos.
+--    Se ejecuta en un único bloque DO para que el editor de SQL no ejecute
+--    las sentencias en paralelo (que rompería la dependencia alter -> update).
+do $$
+begin
+  alter table public.profiles add column if not exists pueblo text not null default 'lascabezas';
+  create index if not exists idx_profiles_pueblo on public.profiles (pueblo);
+
+  -- Asignar el pueblo a los perfiles existentes.
+  -- El perfil 'admin' se deja como está (lascabezas por defecto).
+  -- Añade más emails aquí para vincular el resto de perfiles.
+  update public.profiles p
+  set pueblo = case
+    when lower(p.email) = 'demo@lebrija.local' then 'lebrija'
+    when lower(p.email) = 'demo@elcuervo.local' then 'elcuervo'
+    else p.pueblo
+  end
+  where p.role <> 'admin';
+end $$;
